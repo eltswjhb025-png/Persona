@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'birthday_screen.dart';
+import 'birthdays_screen.dart';
 
 class HomeScreen extends StatelessWidget{
   const HomeScreen({super.key});
