@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/person.dart';
 import 'add_person_screen.dart';
+import '../widgets/birthday_card.dart';
 
 class BirthdaysScreen extends StatefulWidget{
   const BirthdaysScreen({super.key});
@@ -46,14 +47,8 @@ class _BirthdaysScreenState extends State<BirthdaysScreen>{
             itemBuilder: (context, index){
               final Person person = people[index];
 
-              return ListTile(
-                leading: const Icon(Icons.cake),
-                title: Text(person.name),
-                subtitle: Text(
-                  '${person.birthday.day}/'
-                      '${person.birthday.month}/'
-                      '${person.birthday.year}',
-                ),
+              return BirthdayCard(
+                  person: person,
               );
             },
       ),
