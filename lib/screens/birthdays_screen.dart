@@ -88,6 +88,59 @@ class _BirthdaysScreenState extends State<BirthdaysScreen>{
 
               return BirthdayCard(
                   person: person,
+
+                onEdit: () async {
+                    final Person? updatedPerson = await Navigator.push<Person>(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => AddPersonScreen(
+                            person: person,
+                          ),
+                      ),
+                    );
+                    if (updatedPerson != null) {
+                      setState(() {
+                        final int index = people.indexWhere(
+                              (p) => p.id == person.id,
+                        );
+
+                        if (index != -1) {
+                          people[index] = updatedPerson;
+                        }
+                      }
+                      );
+                    }
+                },
+                onDelete: () {
+                    showDialog(
+                        context: context,
+                        builder: (context) {
+                          return AlertDialog(
+                            title: const Text('Delete Person'),
+                            content: Text('Are you sure you want to delete ${person.name}?',
+                            ),
+                            actions: [
+                              TextButton(
+                                  onPressed: () {
+                                    Navigator.pop(context);
+                                  },
+                                  child: const Text('Cancel'),
+                              ),
+                              TextButton(
+                              onPressed: (){
+                                setState(() {
+                                  people.remove(person);
+                                });
+
+                                Navigator.pop(context);
+                              },
+                                child: const Text('Delete'),
+                              ),
+                            ],
+                          );
+                        },
+                    );
+                }
               );
             },
       ),

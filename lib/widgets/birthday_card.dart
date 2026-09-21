@@ -3,10 +3,14 @@ import '../models/person.dart';
 
 class BirthdayCard extends StatelessWidget {
   final Person person;
+  final VoidCallback onDelete;
+  final VoidCallback onEdit;
 
   const BirthdayCard({
     super.key,
     required this.person,
+    required this.onDelete,
+    required this.onEdit,
   });
 
   int daysUntilBirthday() {
@@ -59,9 +63,31 @@ class BirthdayCard extends StatelessWidget {
           '${person.birthday.day}/'
               '${person.birthday.month}/'
               '${person.birthday.year}\n'
-          '${days == 0 ? 'Birthday today!' : '$days days to go'}',
+          '${days == 0 ? 'Birthday today!' : '$days days to go'}'
+          '${person.phoneNumber != null ? '\n${person.phoneNumber}' : ''}',
         ),
-      ),
+        trailing: PopupMenuButton<String>(
+          onSelected: (String value) {
+            if (value == 'edit') {
+              onEdit();
+            } else if (value == 'delete') {
+              onDelete();
+            }
+          },
+          itemBuilder: (BuildContext context) {
+            return [
+              const PopupMenuItem<String>(
+                value: 'edit',
+                child: Text('Edit'),
+              ),
+              const PopupMenuItem<String>(
+                value: 'delete',
+                  child: Text('Delete'),
+              ),
+            ];
+          },
+        ),
+    ),
     );
   }
 }

@@ -2,7 +2,12 @@ import 'package:flutter/material.dart';
 import '../models/person.dart';
 
 class AddPersonScreen extends StatefulWidget{
-  const AddPersonScreen({super.key});
+  final Person? person;
+
+  const AddPersonScreen({
+    super.key,
+    this.person
+  });
 
   @override
   State<AddPersonScreen> createState() => _AddPersonScreenState();
@@ -51,7 +56,8 @@ class _AddPersonScreenState extends State<AddPersonScreen>{
     }
 
     final Person person = Person(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        id: widget.person?.id ??
+            DateTime.now().millisecondsSinceEpoch.toString(),
         name: name,
         birthday: selectedBirthday!,
         phoneNumber: phoneNumber.isEmpty? null : phoneNumber,
@@ -68,10 +74,23 @@ class _AddPersonScreenState extends State<AddPersonScreen>{
   }
 
   @override
+  void initState() {
+    super.initState();
+
+    if (widget.person != null) {
+      nameController.text = widget.person!.name;
+      phoneController.text = widget.person!.phoneNumber ?? '';
+      selectedBirthday = widget.person!.birthday;
+    }
+  }
+
+  @override
   Widget build(BuildContext context){
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Add Person'),
+        title: Text(
+            widget.person == null ? 'Add Person' : 'Edit Person',
+        ),
       ),
       body: Padding(
           padding: const EdgeInsets.all(20),
@@ -122,7 +141,9 @@ class _AddPersonScreenState extends State<AddPersonScreen>{
 
                ElevatedButton(
                    onPressed: savePerson,
-                   child: const Text('Save Person'),
+                   child: Text(
+                       widget.person == null ? 'Save Person' : 'Update Person',
+                   ),
             ),
           ],
         ),
