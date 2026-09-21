@@ -13,6 +13,43 @@ class BirthdaysScreen extends StatefulWidget{
 class _BirthdaysScreenState extends State<BirthdaysScreen>{
   final List<Person> people = [];
 
+  List<Person> getSortedPeople() {
+    final List<Person> sortedPeople = List.from(people);
+
+    sortedPeople.sort((a, b) {
+      return daysUntilBirthday(a).compareTo(
+        daysUntilBirthday(b),
+      );
+    });
+
+    return sortedPeople;
+  }
+
+  int daysUntilBirthday(Person person) {
+    final DateTime today = DateTime.now();
+
+    DateTime nextBirthday = DateTime(
+      today.year,
+      person.birthday.month,
+      person.birthday.day,
+    );
+
+    if (nextBirthday.isBefore(
+      DateTime(today.year, today.month, today.day),
+    )) {
+      nextBirthday = DateTime(
+        today.year  + 1 ,
+        person.birthday.month,
+        person.birthday.day,
+      );
+    }
+
+    return nextBirthday
+        .difference(
+      DateTime(today.year, today.month, today.day),
+    ).inDays;
+  }
+
   Future<void> addPerson() async{
     final Person? person = await Navigator.push<Person>(
       context,
@@ -30,6 +67,8 @@ class _BirthdaysScreenState extends State<BirthdaysScreen>{
 
   @override
   Widget build(BuildContext context){
+    final List<Person> sortedPeople = getSortedPeople();
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Birthdays'),
@@ -43,9 +82,9 @@ class _BirthdaysScreenState extends State<BirthdaysScreen>{
         ),
       )
           : ListView.builder(
-            itemCount: people.length,
+            itemCount: sortedPeople.length,
             itemBuilder: (context, index){
-              final Person person = people[index];
+              final Person person = sortedPeople[index];
 
               return BirthdayCard(
                   person: person,
