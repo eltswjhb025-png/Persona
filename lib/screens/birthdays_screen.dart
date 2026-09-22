@@ -1,7 +1,10 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../models/person.dart';
 import 'add_person_screen.dart';
 import '../widgets/birthday_card.dart';
+import '../database/database_helper.dart';
+
 
 class BirthdaysScreen extends StatefulWidget{
   const BirthdaysScreen({super.key});
@@ -12,6 +15,22 @@ class BirthdaysScreen extends StatefulWidget{
 
 class _BirthdaysScreenState extends State<BirthdaysScreen>{
   final List<Person> people = [];
+  final DatabaseHelper databaseHelper = DatabaseHelper();
+
+  Future<void> loadPeople() async {
+    final List<Person> savedPeople = await databaseHelper.getPeople();
+
+    setState(() {
+      people.clear();
+      people.addAll(savedPeople);
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    loadPeople();
+  }
 
   List<Person> getSortedPeople() {
     final List<Person> sortedPeople = List.from(people);
@@ -59,6 +78,8 @@ class _BirthdaysScreenState extends State<BirthdaysScreen>{
     );
 
     if (person != null){
+      await databaseHelper.insertPerson(person);
+
       setState(() {
         people.add(person);
       });
@@ -99,6 +120,8 @@ class _BirthdaysScreenState extends State<BirthdaysScreen>{
                       ),
                     );
                     if (updatedPerson != null) {
+                      await databaseHelper.updatePerson(updatedPerson);
+
                       setState(() {
                         final int index = people.indexWhere(
                               (p) => p.id == person.id,
@@ -127,7 +150,9 @@ class _BirthdaysScreenState extends State<BirthdaysScreen>{
                                   child: const Text('Cancel'),
                               ),
                               TextButton(
-                              onPressed: (){
+                              onPressed: () async {
+                                await databaseHelper.deletePerson(person.id);
+
                                 setState(() {
                                   people.remove(person);
                                 });

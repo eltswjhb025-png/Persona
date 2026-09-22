@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'screens/home_screen.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 void main() {
+  sqfliteFfiInit();
+  databaseFactory = databaseFactoryFfi;
+
   runApp(const PersonaApp());
 }
 
