@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'birthdays_screen.dart';
+import '../services/notification_service.dart';
 
 class HomeScreen extends StatelessWidget{
   const HomeScreen({super.key});
@@ -40,6 +41,32 @@ class HomeScreen extends StatelessWidget{
                 );
               },
               child: const Text('My Birthdays'),
+            ),
+
+            const SizedBox(height: 15),
+
+            ElevatedButton(
+                onPressed: () {
+                  NotificationService.showTestNotification();
+                },
+                child: const Text('Test Notification'),
+            ),
+
+            const SizedBox(height: 15),
+
+            ElevatedButton(
+                onPressed: () {
+                  final DateTime scheduledDate =
+                      DateTime.now().add(const Duration(minutes: 1));
+
+                  NotificationService.scheduleNotification(
+                      id: 1,
+                      title: 'Persona',
+                      body: 'This is a scheduled birthday reminder!',
+                      scheduledDate: scheduledDate,
+                  );
+                },
+                child: const Text('Test Scheduled Notification'),
             ),
           ],
         ),

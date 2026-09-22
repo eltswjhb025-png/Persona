@@ -1,10 +1,19 @@
 import 'package:flutter/material.dart';
-import 'screens/home_screen.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+import 'services/notification_service.dart';
+import 'screens/home_screen.dart';
+import 'dart:io';
 
-void main() {
-  sqfliteFfiInit();
-  databaseFactory = databaseFactoryFfi;
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+    sqfliteFfiInit();
+    databaseFactory = databaseFactoryFfi;
+  }
+
+
+  await NotificationService.initialize();
 
   runApp(const PersonaApp());
 }

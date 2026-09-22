@@ -1,9 +1,9 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../models/person.dart';
 import 'add_person_screen.dart';
 import '../widgets/birthday_card.dart';
 import '../database/database_helper.dart';
+import '../services/reminder_service.dart';
 
 
 class BirthdaysScreen extends StatefulWidget{
@@ -83,6 +83,7 @@ class _BirthdaysScreenState extends State<BirthdaysScreen>{
       setState(() {
         people.add(person);
       });
+      await ReminderService.scheduleBirthdayReminders(person);
     }
   }
 
@@ -120,6 +121,8 @@ class _BirthdaysScreenState extends State<BirthdaysScreen>{
                       ),
                     );
                     if (updatedPerson != null) {
+                      await ReminderService.cancelBirthdayReminders(person);
+
                       await databaseHelper.updatePerson(updatedPerson);
 
                       setState(() {
@@ -130,8 +133,9 @@ class _BirthdaysScreenState extends State<BirthdaysScreen>{
                         if (index != -1) {
                           people[index] = updatedPerson;
                         }
-                      }
-                      );
+                      });
+
+                      await ReminderService.scheduleBirthdayReminders(updatedPerson);
                     }
                 },
                 onDelete: () {
@@ -151,6 +155,8 @@ class _BirthdaysScreenState extends State<BirthdaysScreen>{
                               ),
                               TextButton(
                               onPressed: () async {
+                                await ReminderService.cancelBirthdayReminders(person);
+
                                 await databaseHelper.deletePerson(person.id);
 
                                 setState(() {
