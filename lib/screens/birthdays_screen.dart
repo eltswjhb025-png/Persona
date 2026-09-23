@@ -19,6 +19,9 @@ class _BirthdaysScreenState extends State<BirthdaysScreen>{
 
   Future<void> loadPeople() async {
     final List<Person> savedPeople = await databaseHelper.getPeople();
+    if (!mounted){
+      return;
+    }
 
     setState(() {
       people.clear();
