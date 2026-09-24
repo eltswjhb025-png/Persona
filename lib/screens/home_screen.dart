@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'birthdays_screen.dart';
 import '../services/notification_service.dart';
+import 'calendar_screen.dart';
 
 class HomeScreen extends StatelessWidget{
   const HomeScreen({super.key});
@@ -67,6 +68,20 @@ class HomeScreen extends StatelessWidget{
                   );
                 },
                 child: const Text('Test Scheduled Notification'),
+            ),
+
+            const SizedBox(height: 15),
+
+            ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const CalendarScreen(),
+                  ),
+                );
+              },
+              child: const Text('Calendar'),
             ),
           ],
         ),

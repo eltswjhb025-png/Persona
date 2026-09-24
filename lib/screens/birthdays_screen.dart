@@ -157,17 +157,21 @@ class _BirthdaysScreenState extends State<BirthdaysScreen>{
                                   child: const Text('Cancel'),
                               ),
                               TextButton(
-                              onPressed: () async {
-                                await ReminderService.cancelBirthdayReminders(person);
+                                onPressed: () async {
+                                  await ReminderService.cancelBirthdayReminders(person);
 
-                                await databaseHelper.deletePerson(person.id);
+                                  await databaseHelper.deletePerson(person.id);
 
-                                setState(() {
-                                  people.remove(person);
-                                });
+                                  if (!mounted) {
+                                    return;
+                                  }
 
-                                Navigator.pop(context);
-                              },
+                                  setState(() {
+                                    people.remove(person);
+                                  });
+
+                                  Navigator.pop(context);
+                                },
                                 child: const Text('Delete'),
                               ),
                             ],

@@ -1,5 +1,3 @@
-import 'package:flutter/material.dart';
-
 import '../models/person.dart';
 import 'notification_service.dart';
 

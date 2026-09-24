@@ -1,6 +1,7 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import '../models/person.dart';
+import '../models/calendar_event.dart';
 
 class DatabaseHelper {
   Future<Database> get database async {
@@ -11,7 +12,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 1,
+      version: 2,
       onCreate: (Database db, int version) async {
         await db.execute('''
         CREATE TABLE people (
@@ -21,7 +22,30 @@ class DatabaseHelper {
           phone_number TEXT
         )
         ''');
+
+        await db.execute('''
+        CREATE TABLE calendar_events (
+        id TEXT PRIMARY KEY,
+        title TEXT NOT NULL,
+        date TEXT NOT NULL,
+        description TEXT,
+        reminder INTEGER NOT NULL
+        )
+        ''');
       },
+    onUpgrade: (Database db, int oldVersion, int newVersion) async {
+      if (oldVersion < 2) {
+        await db.execute('''
+        CREATE TABLE calendar_events (
+          id TEXT PRIMARY KEY,
+          title TEXT NOT NULL,
+          date TEXT NOT NULL,
+          description TEXT,
+          reminder INTEGER NOT NULL
+        )
+      ''');
+      }
+    },
     );
   }
 
@@ -80,4 +104,63 @@ class DatabaseHelper {
       whereArgs:  [id],
     );
   }
+
+  Future<void> insertCalendarEvent(CalendarEvent event) async {
+    final Database db = await database;
+
+    await db.insert(
+      'calendar_events',
+      {
+        'id': event.id,
+        'title': event.title,
+        'date': event.date.toIso8601String(),
+        'description': event.description,
+        'reminder': event.reminder ? 1 : 0,
+      },
+    );
+  }
+  Future<List<CalendarEvent>> getCalendarEvents() async {
+    final Database db = await database;
+
+    final List<Map<String, dynamic>> rows = await db.query(
+      'calendar_events',
+    );
+
+    return rows.map((row) {
+      return CalendarEvent(
+        id: row['id'] as String,
+        title: row['title'] as String,
+        date: DateTime.parse(row['date'] as String),
+        description: row['description'] as String?,
+        reminder: (row['reminder'] as int) == 1,
+      );
+    }).toList();
+  }
+
+  Future<void> updateCalendarEvent(CalendarEvent event) async {
+    final Database db = await database;
+
+    await db.update(
+      'calendar_events',
+      {
+        'title': event.title,
+        'date': event.date.toIso8601String(),
+        'description': event.description,
+        'reminder': event.reminder ? 1 : 0,
+      },
+      where: 'id = ?',
+      whereArgs: [event.id],
+    );
+  }
+
+  Future<void> deleteCalendarEvent(String id) async {
+    final Database db = await database;
+
+    await db.delete(
+      'calendar_events',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
 }
