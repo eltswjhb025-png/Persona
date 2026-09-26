@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/person.dart';
+import '../services/birthday_service.dart';
 
 class BirthdayCard extends StatelessWidget {
   final Person person;
@@ -13,45 +14,38 @@ class BirthdayCard extends StatelessWidget {
     required this.onEdit,
   });
 
-  int daysUntilBirthday() {
-    final DateTime today = DateTime.now();
-
-    DateTime nextBirthday = DateTime(
-      today.year,
-      person.birthday.month,
-      person.birthday.day,
-    );
-
-    if (nextBirthday.isBefore(
-      DateTime(today.year, today.month, today.day),
-    )){
-      nextBirthday = DateTime(
-        today.year + 1,
-        person.birthday.month,
-        person.birthday.day,
-      );
-    }
-
-    return nextBirthday
-        .difference(
-      DateTime(today.year, today.month, today.day),
-    ).inDays;
-  }
+  static const Color oliveDrab = Color(0xFF6B8E23);
 
   @override
   Widget build(BuildContext context) {
-    final int days = daysUntilBirthday();
+    final int days = BirthdayService.daysUntilBirthday(
+      person.birthday,
+    );
 
     return Card(
+      color: Colors.white,
+      elevation: 4,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(18),
+      ),
       margin: const EdgeInsets.symmetric(
         horizontal: 16,
         vertical: 8,
       ),
       child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 8,
+        ),
+
+        // ---------------- CAKE ICON ----------------
         leading: const Icon(
           Icons.cake,
           size: 40,
+          color: oliveDrab,
         ),
+
+        // ---------------- NAME ----------------
         title: Text(
           person.name,
           style: const TextStyle(
@@ -59,13 +53,17 @@ class BirthdayCard extends StatelessWidget {
             fontWeight: FontWeight.bold,
           ),
         ),
+
+        // ---------------- DETAILS ----------------
         subtitle: Text(
           '${person.birthday.day}/'
               '${person.birthday.month}/'
               '${person.birthday.year}\n'
-          '${days == 0 ? 'Birthday today!' : '$days days to go'}'
-          '${person.phoneNumber != null ? '\n${person.phoneNumber}' : ''}',
+              '${days == 0 ? 'Birthday today!' : '$days days to go'}'
+              '${person.phoneNumber != null ? '\n${person.phoneNumber}' : ''}',
         ),
+
+        // ---------------- MENU ----------------
         trailing: PopupMenuButton<String>(
           onSelected: (String value) {
             if (value == 'edit') {
@@ -82,12 +80,12 @@ class BirthdayCard extends StatelessWidget {
               ),
               const PopupMenuItem<String>(
                 value: 'delete',
-                  child: Text('Delete'),
+                child: Text('Delete'),
               ),
             ];
           },
         ),
-    ),
+      ),
     );
   }
 }

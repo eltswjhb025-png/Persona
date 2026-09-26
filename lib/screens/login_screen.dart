@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'home_screen.dart';
 import 'sign_up_screen.dart';
+import '../services/google_auth_service.dart';
+
 
 class LoginScreen extends StatefulWidget {
 const LoginScreen({super.key});
@@ -311,42 +313,62 @@ color: Colors.grey.shade300,
 const SizedBox(height: 20),
 
 // Google button
-SizedBox(
-width: double.infinity,
-height: 52,
+  SizedBox(
+    width: double.infinity,
+    height: 52,
 
-child: OutlinedButton.icon(
-onPressed: () {
-// Google authentication will
-// be added later.
-},
+    child: OutlinedButton.icon(
+      onPressed: () async {
+        final credentials =
+        await GoogleAuthService.signIn();
 
-icon: const Icon(
-Icons.g_mobiledata,
-size: 30,
-),
+        if (!context.mounted) {
+          return;
+        }
 
-label: const Text(
-'Continue with Google',
-),
+        if (credentials == null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Google sign in was cancelled or failed.',
+              ),
+            ),
+          );
 
-style:
-OutlinedButton.styleFrom(
-foregroundColor:
-Colors.black87,
+          return;
+        }
 
-side: BorderSide(
-color: Colors.grey.shade300,
-),
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const HomeScreen(),
+          ),
+        );
+      },
 
-shape:
-RoundedRectangleBorder(
-borderRadius:
-BorderRadius.circular(15),
-),
-),
-),
-),
+      icon: const Icon(
+        Icons.g_mobiledata,
+        size: 30,
+      ),
+
+      label: const Text(
+        'Continue with Google',
+      ),
+
+      style: OutlinedButton.styleFrom(
+        foregroundColor: Colors.black87,
+
+        side: BorderSide(
+          color: Colors.grey.shade300,
+        ),
+
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(15),
+        ),
+      ),
+    ),
+  ),
+
 
 const SizedBox(height: 25),
 

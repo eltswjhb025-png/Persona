@@ -12,7 +12,8 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 2,
+      version: 3,
+
       onCreate: (Database db, int version) async {
         await db.execute('''
         CREATE TABLE people (
@@ -25,40 +26,53 @@ class DatabaseHelper {
 
         await db.execute('''
         CREATE TABLE calendar_events (
-        id TEXT PRIMARY KEY,
-        title TEXT NOT NULL,
-        date TEXT NOT NULL,
-        description TEXT,
-        reminder INTEGER NOT NULL
-        )
-        ''');
-      },
-    onUpgrade: (Database db, int oldVersion, int newVersion) async {
-      if (oldVersion < 2) {
-        await db.execute('''
-        CREATE TABLE calendar_events (
           id TEXT PRIMARY KEY,
           title TEXT NOT NULL,
           date TEXT NOT NULL,
           description TEXT,
-          reminder INTEGER NOT NULL
+          reminder INTEGER NOT NULL,
+          google_event_id TEXT
         )
-      ''');
-      }
-    },
+        ''');
+      },
+
+      onUpgrade: (Database db, int oldVersion, int newVersion) async {
+        if (oldVersion < 2) {
+          await db.execute('''
+          CREATE TABLE calendar_events (
+            id TEXT PRIMARY KEY,
+            title TEXT NOT NULL,
+            date TEXT NOT NULL,
+            description TEXT,
+            reminder INTEGER NOT NULL
+          )
+          ''');
+        }
+
+        if (oldVersion < 3) {
+          await db.execute('''
+          ALTER TABLE calendar_events
+          ADD COLUMN google_event_id TEXT
+          ''');
+        }
+      },
     );
   }
+
+  // =========================
+  // PEOPLE
+  // =========================
 
   Future<void> insertPerson(Person person) async {
     final Database db = await database;
 
     await db.insert(
-        'people',
+      'people',
       {
-        'id' : person.id,
-        'name' : person.name,
-        'birthday' : person.birthday.toIso8601String(),
-        'phone_number' : person.phoneNumber,
+        'id': person.id,
+        'name': person.name,
+        'birthday': person.birthday.toIso8601String(),
+        'phone_number': person.phoneNumber,
       },
     );
   }
@@ -74,7 +88,9 @@ class DatabaseHelper {
       return Person(
         id: row['id'] as String,
         name: row['name'] as String,
-        birthday: DateTime.parse(row['birthday'] as String),
+        birthday: DateTime.parse(
+          row['birthday'] as String,
+        ),
         phoneNumber: row['phone_number'] as String?,
       );
     }).toList();
@@ -86,9 +102,9 @@ class DatabaseHelper {
     await db.update(
       'people',
       {
-        'name' : person.name,
-        'birthday' : person.birthday.toIso8601String(),
-        'phone_number' : person.phoneNumber,
+        'name': person.name,
+        'birthday': person.birthday.toIso8601String(),
+        'phone_number': person.phoneNumber,
       },
       where: 'id = ?',
       whereArgs: [person.id],
@@ -101,9 +117,13 @@ class DatabaseHelper {
     await db.delete(
       'people',
       where: 'id = ?',
-      whereArgs:  [id],
+      whereArgs: [id],
     );
   }
+
+  // =========================
+  // CALENDAR EVENTS
+  // =========================
 
   Future<void> insertCalendarEvent(CalendarEvent event) async {
     final Database db = await database;
@@ -116,9 +136,11 @@ class DatabaseHelper {
         'date': event.date.toIso8601String(),
         'description': event.description,
         'reminder': event.reminder ? 1 : 0,
+        'google_event_id': event.googleEventId,
       },
     );
   }
+
   Future<List<CalendarEvent>> getCalendarEvents() async {
     final Database db = await database;
 
@@ -130,14 +152,19 @@ class DatabaseHelper {
       return CalendarEvent(
         id: row['id'] as String,
         title: row['title'] as String,
-        date: DateTime.parse(row['date'] as String),
+        date: DateTime.parse(
+          row['date'] as String,
+        ),
         description: row['description'] as String?,
         reminder: (row['reminder'] as int) == 1,
+        googleEventId: row['google_event_id'] as String?,
       );
     }).toList();
   }
 
-  Future<void> updateCalendarEvent(CalendarEvent event) async {
+  Future<void> updateCalendarEvent(
+      CalendarEvent event,
+      ) async {
     final Database db = await database;
 
     await db.update(
@@ -147,6 +174,7 @@ class DatabaseHelper {
         'date': event.date.toIso8601String(),
         'description': event.description,
         'reminder': event.reminder ? 1 : 0,
+        'google_event_id': event.googleEventId,
       },
       where: 'id = ?',
       whereArgs: [event.id],
@@ -162,5 +190,4 @@ class DatabaseHelper {
       whereArgs: [id],
     );
   }
-
 }

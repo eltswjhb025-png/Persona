@@ -1,30 +1,28 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
-import '../services/notification_service.dart';
 
 class NotificationService {
   static final FlutterLocalNotificationsPlugin notifications =
-      FlutterLocalNotificationsPlugin();
+  FlutterLocalNotificationsPlugin();
 
   static Future<void> initialize() async {
     tz.initializeTimeZones();
 
     const AndroidInitializationSettings androidSettings =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
+    AndroidInitializationSettings('@mipmap/ic_launcher');
 
     const WindowsInitializationSettings windowsSettings =
     WindowsInitializationSettings(
-        appName: 'Persona',
-        appUserModelId: 'com.persona.app',
-        guid: '7f4a8c2e-1b63-4d91-9a52-6c8e37f1b204',
+      appName: 'Persona',
+      appUserModelId: 'com.persona.app',
+      guid: '7f4a8c2e-1b63-4d91-9a52-6c8e37f1b204',
     );
 
-    const InitializationSettings settings =
-        InitializationSettings(
-          android: androidSettings,
-          windows: windowsSettings,
-        );
+    const InitializationSettings settings = InitializationSettings(
+      android: androidSettings,
+      windows: windowsSettings,
+    );
 
     await notifications.initialize(settings: settings);
   }
@@ -54,24 +52,26 @@ class NotificationService {
     required DateTime scheduledDate,
   }) async {
     await notifications.zonedSchedule(
-        id: id,
-        title: title,
-        body: body,
-        scheduledDate: tz.TZDateTime.from(
-          scheduledDate,
-          tz.local,
+      id: id,
+      title: title,
+      body: body,
+      scheduledDate: tz.TZDateTime.from(
+        scheduledDate,
+        tz.local,
+      ),
+      androidScheduleMode:
+      AndroidScheduleMode.inexactAllowWhileIdle,
+      notificationDetails: const NotificationDetails(
+        android: AndroidNotificationDetails(
+          'birthday_channel',
+          'Birthday Reminders',
+          channelDescription:
+          'Notifications for upcoming birthdays',
+          importance: Importance.high,
+          priority: Priority.high,
         ),
-        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-        notificationDetails: const NotificationDetails(
-          android: AndroidNotificationDetails(
-            'birthday_channel',
-            'Birthday Reminders',
-            channelDescription: 'Notifications for upcoming birthdays',
-            importance: Importance.high,
-            priority: Priority.high,
-          ),
-          windows: WindowsNotificationDetails(),
-        ),
+        windows: WindowsNotificationDetails(),
+      ),
     );
   }
 
