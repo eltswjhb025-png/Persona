@@ -9,5 +9,5 @@ class Person {
     required this.name,
     required this.birthday,
     this.phoneNumber,
-});
+  });
 }
