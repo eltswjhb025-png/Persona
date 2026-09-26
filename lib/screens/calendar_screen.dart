@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import '../database/database_helper.dart';
 import '../models/calendar_event.dart';
 import '../models/person.dart';
-import '../services/birthday_service.dart';
 import '../services/notification_service.dart';
 import 'add_calendar_event_screen.dart';
+import 'package:googleapis/calendar/v3.dart' as calendar;
+import '../services/google_calendar_service.dart';
+import 'package:table_calendar/table_calendar.dart';
 
 class CalendarScreen extends StatefulWidget {
   const CalendarScreen({super.key});
@@ -20,6 +22,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
   List<CalendarEvent> events = [];
   List<Person> people = [];
+  List<calendar.Event> googleHolidays = [];
 
   Future<void> loadEvents() async {
     final List<CalendarEvent> savedEvents =
@@ -38,10 +41,40 @@ class _CalendarScreenState extends State<CalendarScreen> {
     });
   }
 
+  Future<void> loadGoogleHolidays() async {
+    final DateTime startDate = DateTime(
+      selectedDate.year,
+      1,
+      1,
+    );
+
+    final DateTime endDate = DateTime(
+      selectedDate.year + 1,
+      1,
+      1,
+    );
+
+    final List<calendar.Event> holidays =
+    await GoogleCalendarService.getSouthAfricanHolidays(
+      startDate: startDate,
+      endDate: endDate,
+    );
+
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      googleHolidays = holidays;
+    });
+  }
+
   @override
   void initState() {
     super.initState();
+
     loadEvents();
+    loadGoogleHolidays();
   }
 
   List<CalendarEvent> getEventsForSelectedDate() {
@@ -57,6 +90,47 @@ class _CalendarScreenState extends State<CalendarScreen> {
       return person.birthday.month == selectedDate.month &&
           person.birthday.day == selectedDate.day;
     }).toList();
+  }
+
+  List<calendar.Event> getGoogleHolidaysForSelectedDate() {
+    return googleHolidays.where((calendar.Event event) {
+      final DateTime? holidayDate = event.start?.date;
+
+      if (holidayDate == null) {
+        return false;
+      }
+
+      return holidayDate.month == selectedDate.month &&
+          holidayDate.day == selectedDate.day;
+    }).toList();
+  }
+  bool hasCalendarEvent(DateTime day) {
+    return events.any((CalendarEvent event) {
+      return event.date.year == day.year &&
+          event.date.month == day.month &&
+          event.date.day == day.day;
+    });
+  }
+
+  bool hasBirthday(DateTime day) {
+    return people.any((Person person) {
+      return person.birthday.month == day.month &&
+          person.birthday.day == day.day;
+    });
+  }
+
+  bool hasGoogleHoliday(DateTime day) {
+    return googleHolidays.any((calendar.Event event) {
+      final DateTime? holidayDate = event.start?.date;
+
+      if (holidayDate == null) {
+        return false;
+      }
+
+      return holidayDate.year == day.year &&
+          holidayDate.month == day.month &&
+          holidayDate.day == day.day;
+    });
   }
 
   @override
@@ -94,22 +168,89 @@ class _CalendarScreenState extends State<CalendarScreen> {
               ),
 
               child: SizedBox(
-                height: 350,
+                height: 380,
 
-                child: CalendarDatePicker(
-                  initialDate: selectedDate,
-                  firstDate: DateTime(1900),
-                  lastDate: DateTime(
+                child: TableCalendar(
+                  firstDay: DateTime(1900),
+                  lastDay: DateTime(
                     DateTime.now().year + 10,
                     12,
                     31,
                   ),
 
-                  onDateChanged: (DateTime date) {
-                    setState(() {
-                      selectedDate = date;
-                    });
+                  focusedDay: selectedDate,
+
+                  selectedDayPredicate: (day) {
+                    return isSameDay(
+                      day,
+                      selectedDate,
+                    );
                   },
+
+                  onDaySelected: (selectedDay, focusedDay) async {
+                    final bool yearChanged =
+                        selectedDay.year != selectedDate.year;
+
+                    setState(() {
+                      selectedDate = selectedDay;
+                    });
+
+                    if (yearChanged) {
+                      await loadGoogleHolidays();
+                    }
+                  },
+
+                  calendarStyle: const CalendarStyle(
+                    todayDecoration: BoxDecoration(
+                      color: Colors.grey,
+                      shape: BoxShape.circle,
+                    ),
+
+                    selectedDecoration: BoxDecoration(
+                      color: Colors.black,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+
+                  calendarBuilders: CalendarBuilders(
+                    defaultBuilder: (context, day, focusedDay) {
+                      final bool event = hasCalendarEvent(day);
+                      final bool birthday = hasBirthday(day);
+                      final bool holiday = hasGoogleHoliday(day);
+
+                      if (!event && !birthday && !holiday) {
+                        return null;
+                      }
+
+                      Color backgroundColor;
+
+                      if (holiday) {
+                        backgroundColor = Colors.red;
+                      } else if (birthday) {
+                        backgroundColor = Colors.pink;
+                      } else {
+                        backgroundColor = Colors.green;
+                      }
+
+                      return Container(
+                        margin: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: backgroundColor,
+                          shape: BoxShape.circle,
+                        ),
+
+                        child: Center(
+                          child: Text(
+                            '${day.day}',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
                 ),
               ),
             ),
@@ -180,8 +321,12 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 final List<Person> selectedBirthdays =
                 getBirthdaysForSelectedDate();
 
+                final List<calendar.Event> selectedHolidays =
+                getGoogleHolidaysForSelectedDate();
+
                 if (selectedEvents.isEmpty &&
-                    selectedBirthdays.isEmpty) {
+                    selectedBirthdays.isEmpty &&
+                    selectedHolidays.isEmpty) {
                   return Center(
                     child: Card(
                       color: olive,
@@ -224,6 +369,50 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 // ListView -> Column
                 return Column(
                   children: [
+                    // Google holidays
+                    ...selectedHolidays.map((calendar.Event holiday) {
+                      return Card(
+                        color: olive,
+                        elevation: 4,
+
+                        margin: const EdgeInsets.only(
+                          bottom: 12,
+                        ),
+
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+
+                        child: ListTile(
+                          contentPadding: const EdgeInsets.all(12),
+
+                          leading: const CircleAvatar(
+                            backgroundColor: Colors.white,
+
+                            child: Icon(
+                              Icons.flag,
+                              color: Colors.black,
+                            ),
+                          ),
+
+                          title: Text(
+                            holiday.summary ?? 'South African Holiday',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+
+                          subtitle: const Text(
+                            'South African Holiday',
+                            style: TextStyle(
+                              color: Colors.white70,
+                            ),
+                          ),
+                        ),
+                      );
+                    }),
+
                     // Birthdays
                     ...selectedBirthdays.map((Person person) {
                       return Card(
