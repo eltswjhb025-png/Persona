@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'home_screen.dart';
 import 'sign_up_screen.dart';
 import '../services/google_auth_service.dart';
-
+import 'package:firebase_auth/firebase_auth.dart';
+import 'forgot_password_screen.dart';
 
 class LoginScreen extends StatefulWidget {
 const LoginScreen({super.key});
@@ -27,28 +28,99 @@ passwordController.dispose();
 super.dispose();
 }
 
-void login() {
-final String email = emailController.text.trim();
-final String password = passwordController.text.trim();
+Future<void> login() async {
+  final String email = emailController.text.trim();
+  final String password = passwordController.text.trim();
 
-if (email.isEmpty || password.isEmpty) {
-ScaffoldMessenger.of(context).showSnackBar(
-const SnackBar(
-content: Text(
-'Please enter your email and password.',
-),
-),
-);
+  if (email.isEmpty || password.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Please enter your email and password.',
+        ),
+      ),
+    );
 
-return;
-}
+    return;
+  }
 
-Navigator.pushReplacement(
-context,
-MaterialPageRoute(
-builder: (context) => const HomeScreen(),
-),
-);
+  try {
+    await FirebaseAuth.instance.signInWithEmailAndPassword(
+      email: email,
+      password: password,
+    );
+
+    if (!mounted) {
+      return;
+    }
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const HomeScreen(),
+      ),
+    );
+  } on FirebaseAuthException catch (e) {
+    String message;
+
+    switch (e.code) {
+      case 'invalid-credential':
+        message =
+        'Incorrect email or password.';
+        break;
+
+      case 'user-not-found':
+        message =
+        'No account was found with this email.';
+        break;
+
+      case 'wrong-password':
+        message =
+        'Incorrect password.';
+        break;
+
+      case 'invalid-email':
+        message =
+        'Please enter a valid email address.';
+        break;
+
+      case 'user-disabled':
+        message =
+        'This account has been disabled.';
+        break;
+
+      case 'network-request-failed':
+        message =
+        'Network error. Please check your internet connection.';
+        break;
+
+      default:
+        message =
+        'Login failed. Please check your details and try again.';
+    }
+
+    if (!mounted) {
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+      ),
+    );
+  } catch (e) {
+    if (!mounted) {
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Something went wrong. Please try again.',
+        ),
+      ),
+    );
+  }
 }
 
 @override
@@ -230,10 +302,14 @@ Align(
 alignment: Alignment.centerRight,
 
 child: TextButton(
-onPressed: () {
-// Forgot password will be
-// added later.
-},
+  onPressed: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const ForgotPasswordScreen(),
+      ),
+    );
+  },
 
 child: Text(
 'Forgot Password?',

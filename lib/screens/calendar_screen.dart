@@ -168,7 +168,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
               ),
 
               child: SizedBox(
-                height: 380,
+                height: 430,
 
                 child: TableCalendar(
                   firstDay: DateTime(1900),
