@@ -3,6 +3,7 @@ import 'login_screen.dart';
 import 'birthdays_screen.dart';
 import 'calendar_screen.dart';
 import 'locator_screen.dart';
+import 'package:persona/screens/settings_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -15,13 +16,41 @@ class HomeScreen extends StatelessWidget {
     const Color oliveDrab =
     Color.fromRGBO(107, 142, 35, 1);
 
+    // Check which theme is currently active.
+    final bool isDarkMode =
+        Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: oliveDrab,
+      // Change the background depending on the theme.
+      backgroundColor:
+      isDarkMode
+          ? const Color(0xFF121510)
+          : oliveDrab,
 
       appBar: AppBar(
         title: const Text('Persona'),
-        backgroundColor: olive,
-        foregroundColor: Colors.white,
+
+        // Use the AppBar theme from main.dart.
+        // Light mode = olive.
+        // Dark mode = dark olive.
+        actions: [
+          IconButton(
+            icon: const Icon(
+              Icons.settings_outlined,
+            ),
+            tooltip: 'Settings',
+
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) =>
+                  const SettingsScreen(),
+                ),
+              );
+            },
+          ),
+        ],
       ),
 
       body: Padding(
@@ -31,12 +60,19 @@ class HomeScreen extends StatelessWidget {
           children: [
             const SizedBox(height: 25),
 
+            // Persona icon
             Container(
               width: 90,
               height: 90,
+
               decoration: BoxDecoration(
-                color: Colors.white,
+                color:
+                isDarkMode
+                    ? const Color(0xFF1E231B)
+                    : Colors.white,
+
                 shape: BoxShape.circle,
+
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withOpacity(0.15),
@@ -55,8 +91,10 @@ class HomeScreen extends StatelessWidget {
 
             const SizedBox(height: 20),
 
+            // Welcome title
             const Text(
               'Welcome to Persona',
+
               style: TextStyle(
                 fontSize: 28,
                 fontWeight: FontWeight.bold,
@@ -66,9 +104,12 @@ class HomeScreen extends StatelessWidget {
 
             const SizedBox(height: 10),
 
+            // Welcome subtitle
             const Text(
               'Your personal space, all in one place.',
+
               textAlign: TextAlign.center,
+
               style: TextStyle(
                 fontSize: 15,
                 color: Colors.white70,
@@ -77,6 +118,7 @@ class HomeScreen extends StatelessWidget {
 
             const SizedBox(height: 35),
 
+            // Menu cards
             Expanded(
               child: GridView.count(
                 crossAxisCount: 2,
@@ -84,12 +126,13 @@ class HomeScreen extends StatelessWidget {
                 mainAxisSpacing: 18,
 
                 children: [
-
+                  // Birthdays
                   _buildMenuCard(
                     context,
                     icon: Icons.cake,
                     title: 'My Birthdays',
                     color: olive,
+
                     onTap: () {
                       Navigator.push(
                         context,
@@ -101,11 +144,13 @@ class HomeScreen extends StatelessWidget {
                     },
                   ),
 
+                  // Calendar
                   _buildMenuCard(
                     context,
                     icon: Icons.calendar_month,
                     title: 'Calendar',
                     color: olive,
+
                     onTap: () {
                       Navigator.push(
                         context,
@@ -117,11 +162,13 @@ class HomeScreen extends StatelessWidget {
                     },
                   ),
 
+                  // Locator
                   _buildMenuCard(
                     context,
                     icon: Icons.location_on,
                     title: 'Locator',
                     color: olive,
+
                     onTap: () {
                       Navigator.push(
                         context,
@@ -133,17 +180,20 @@ class HomeScreen extends StatelessWidget {
                     },
                   ),
 
+                  // SOS
                   _buildMenuCard(
                     context,
                     icon: Icons.sos,
                     title: 'SOS',
                     color: olive,
+
                     onTap: () {
                       ScaffoldMessenger.of(context)
                           .showSnackBar(
                         const SnackBar(
-                          content:
-                          Text('SOS coming soon'),
+                          content: Text(
+                            'SOS coming soon',
+                          ),
                         ),
                       );
                     },
@@ -167,6 +217,7 @@ class HomeScreen extends StatelessWidget {
     return Card(
       color: color,
       elevation: 5,
+
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
       ),
@@ -191,6 +242,7 @@ class HomeScreen extends StatelessWidget {
             Text(
               title,
               textAlign: TextAlign.center,
+
               style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,

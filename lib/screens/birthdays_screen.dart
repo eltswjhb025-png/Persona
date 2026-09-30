@@ -24,8 +24,13 @@ class _BirthdaysScreenState extends State<BirthdaysScreen> {
   static const Color background = Color(0xFFF4F5E9);
   static const Color darkOlive = Color(0xFF3F4A16);
 
+  // Dark mode colours
+  static const Color darkBackground = Color(0xFF121510);
+  static const Color darkCard = Color(0xFF1E231B);
+
   Future<void> loadPeople() async {
-    final List<Person> savedPeople = await databaseHelper.getPeople();
+    final List<Person> savedPeople =
+    await databaseHelper.getPeople();
 
     if (!mounted) {
       return;
@@ -44,7 +49,8 @@ class _BirthdaysScreenState extends State<BirthdaysScreen> {
   }
 
   List<Person> getSortedPeople() {
-    final List<Person> sortedPeople = List.from(people);
+    final List<Person> sortedPeople =
+    List.from(people);
 
     sortedPeople.sort((a, b) {
       return BirthdayService.daysUntilBirthday(
@@ -60,10 +66,12 @@ class _BirthdaysScreenState extends State<BirthdaysScreen> {
   }
 
   Future<void> addPerson() async {
-    final Person? person = await Navigator.push<Person>(
+    final Person? person =
+    await Navigator.push<Person>(
       context,
       MaterialPageRoute(
-        builder: (context) => const AddPersonScreen(),
+        builder: (context) =>
+        const AddPersonScreen(),
       ),
     );
 
@@ -78,16 +86,53 @@ class _BirthdaysScreenState extends State<BirthdaysScreen> {
         people.add(person);
       });
 
-      await ReminderService.scheduleBirthdayReminders(person);
+      await ReminderService
+          .scheduleBirthdayReminders(person);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final List<Person> sortedPeople = getSortedPeople();
+    final List<Person> sortedPeople =
+    getSortedPeople();
+
+    // Check the current theme.
+    final bool isDarkMode =
+        Theme.of(context).brightness ==
+            Brightness.dark;
+
+    // Background changes with Dark Mode.
+    final Color screenBackground =
+    isDarkMode
+        ? darkBackground
+        : background;
+
+    // Empty-state card changes with Dark Mode.
+    final Color cardBackground =
+    isDarkMode
+        ? darkCard
+        : Colors.white;
+
+    // Main heading changes with Dark Mode.
+    final Color headingColor =
+    isDarkMode
+        ? Colors.white
+        : darkOlive;
+
+    // Secondary text changes with Dark Mode.
+    final Color secondaryTextColor =
+    isDarkMode
+        ? Colors.white70
+        : Colors.grey;
+
+    // Empty-state icon background.
+    final Color iconBackground =
+    isDarkMode
+        ? const Color(0xFF2B3326)
+        : lightOlive;
 
     return Scaffold(
-      backgroundColor: background,
+      backgroundColor: screenBackground,
 
       // ---------------- APP BAR ----------------
       appBar: AppBar(
@@ -98,9 +143,9 @@ class _BirthdaysScreenState extends State<BirthdaysScreen> {
             letterSpacing: 0.5,
           ),
         ),
-        backgroundColor: oliveDrab,
-        foregroundColor: Colors.white,
-        elevation: 0,
+
+        // The AppBar colour comes from the global
+        // theme in main.dart.
         centerTitle: true,
       ),
 
@@ -108,32 +153,56 @@ class _BirthdaysScreenState extends State<BirthdaysScreen> {
       body: people.isEmpty
           ? Center(
         child: Container(
-          margin: const EdgeInsets.all(24),
-          padding: const EdgeInsets.all(30),
+          margin:
+          const EdgeInsets.all(24),
+
+          padding:
+          const EdgeInsets.all(30),
+
           decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(24),
+            color: cardBackground,
+
+            borderRadius:
+            BorderRadius.circular(24),
+
             border: Border.all(
-              color: lightOlive,
+              color: isDarkMode
+                  ? const Color(0xFF39412F)
+                  : lightOlive,
               width: 2,
             ),
+
             boxShadow: [
               BoxShadow(
-                color: olive.withOpacity(0.12),
+                color: olive.withOpacity(
+                  0.12,
+                ),
                 blurRadius: 15,
-                offset: const Offset(0, 6),
+                offset:
+                const Offset(0, 6),
               ),
             ],
           ),
+
           child: Column(
-            mainAxisSize: MainAxisSize.min,
+            mainAxisSize:
+            MainAxisSize.min,
+
             children: [
               Container(
-                padding: const EdgeInsets.all(18),
-                decoration: const BoxDecoration(
-                  color: lightOlive,
-                  shape: BoxShape.circle,
+                padding:
+                const EdgeInsets.all(
+                  18,
                 ),
+
+                decoration:
+                BoxDecoration(
+                  color:
+                  iconBackground,
+                  shape:
+                  BoxShape.circle,
+                ),
+
                 child: const Icon(
                   Icons.cake_outlined,
                   size: 45,
@@ -143,23 +212,29 @@ class _BirthdaysScreenState extends State<BirthdaysScreen> {
 
               const SizedBox(height: 18),
 
-              const Text(
+              Text(
                 'No birthdays yet',
+
                 style: TextStyle(
                   fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: darkOlive,
+                  fontWeight:
+                  FontWeight.bold,
+                  color: headingColor,
                 ),
               ),
 
               const SizedBox(height: 8),
 
-              const Text(
+              Text(
                 'Add someone special to your birthday list.',
-                textAlign: TextAlign.center,
+
+                textAlign:
+                TextAlign.center,
+
                 style: TextStyle(
                   fontSize: 14,
-                  color: Colors.grey,
+                  color:
+                  secondaryTextColor,
                 ),
               ),
             ],
@@ -169,40 +244,54 @@ class _BirthdaysScreenState extends State<BirthdaysScreen> {
 
       // ---------------- BIRTHDAY LIST ----------------
           : ListView.builder(
-        padding: const EdgeInsets.only(
+        padding:
+        const EdgeInsets.only(
           top: 12,
           bottom: 90,
         ),
-        itemCount: sortedPeople.length,
-        itemBuilder: (context, index) {
-          final Person person = sortedPeople[index];
+
+        itemCount:
+        sortedPeople.length,
+
+        itemBuilder:
+            (context, index) {
+          final Person person =
+          sortedPeople[index];
 
           return Padding(
-            padding: const EdgeInsets.symmetric(
+            padding:
+            const EdgeInsets.symmetric(
               horizontal: 12,
               vertical: 5,
             ),
+
             child: BirthdayCard(
               person: person,
 
               // ---------------- EDIT ----------------
               onEdit: () async {
-                final Person? updatedPerson =
-                await Navigator.push<Person>(
+                final Person?
+                updatedPerson =
+                await Navigator
+                    .push<Person>(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => AddPersonScreen(
-                      person: person,
-                    ),
+                    builder: (context) =>
+                        AddPersonScreen(
+                          person: person,
+                        ),
                   ),
                 );
 
-                if (updatedPerson != null) {
-                  await ReminderService.cancelBirthdayReminders(
+                if (updatedPerson !=
+                    null) {
+                  await ReminderService
+                      .cancelBirthdayReminders(
                     person,
                   );
 
-                  await databaseHelper.updatePerson(
+                  await databaseHelper
+                      .updatePerson(
                     updatedPerson,
                   );
 
@@ -211,16 +300,21 @@ class _BirthdaysScreenState extends State<BirthdaysScreen> {
                   }
 
                   setState(() {
-                    final int index = people.indexWhere(
-                          (p) => p.id == person.id,
+                    final int index =
+                    people.indexWhere(
+                          (p) =>
+                      p.id ==
+                          person.id,
                     );
 
                     if (index != -1) {
-                      people[index] = updatedPerson;
+                      people[index] =
+                          updatedPerson;
                     }
                   });
 
-                  await ReminderService.scheduleBirthdayReminders(
+                  await ReminderService
+                      .scheduleBirthdayReminders(
                     updatedPerson,
                   );
                 }
@@ -232,40 +326,63 @@ class _BirthdaysScreenState extends State<BirthdaysScreen> {
                   context: context,
                   builder: (context) {
                     return AlertDialog(
-                      backgroundColor: background,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      title: const Text(
-                        'Delete Person',
-                        style: TextStyle(
-                          color: darkOlive,
-                          fontWeight: FontWeight.bold,
+                      backgroundColor:
+                      cardBackground,
+
+                      shape:
+                      RoundedRectangleBorder(
+                        borderRadius:
+                        BorderRadius
+                            .circular(
+                          20,
                         ),
                       ),
+
+                      title: Text(
+                        'Delete Person',
+
+                        style: TextStyle(
+                          color:
+                          headingColor,
+                          fontWeight:
+                          FontWeight
+                              .bold,
+                        ),
+                      ),
+
                       content: Text(
                         'Are you sure you want to delete ${person.name}?',
                       ),
+
                       actions: [
                         TextButton(
                           onPressed: () {
-                            Navigator.pop(context);
+                            Navigator.pop(
+                              context,
+                            );
                           },
+
                           child: const Text(
                             'Cancel',
-                            style: TextStyle(
-                              color: oliveDrab,
+
+                            style:
+                            TextStyle(
+                              color:
+                              oliveDrab,
                             ),
                           ),
                         ),
+
                         TextButton(
-                          onPressed: () async {
+                          onPressed:
+                              () async {
                             await ReminderService
                                 .cancelBirthdayReminders(
                               person,
                             );
 
-                            await databaseHelper.deletePerson(
+                            await databaseHelper
+                                .deletePerson(
                               person.id,
                             );
 
@@ -274,16 +391,26 @@ class _BirthdaysScreenState extends State<BirthdaysScreen> {
                             }
 
                             setState(() {
-                              people.remove(person);
+                              people.remove(
+                                person,
+                              );
                             });
 
-                            Navigator.pop(context);
+                            Navigator.pop(
+                              context,
+                            );
                           },
+
                           child: const Text(
                             'Delete',
-                            style: TextStyle(
-                              color: Colors.red,
-                              fontWeight: FontWeight.bold,
+
+                            style:
+                            TextStyle(
+                              color:
+                              Colors.red,
+                              fontWeight:
+                              FontWeight
+                                  .bold,
                             ),
                           ),
                         ),
@@ -298,14 +425,22 @@ class _BirthdaysScreenState extends State<BirthdaysScreen> {
       ),
 
       // ---------------- ADD BUTTON ----------------
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton:
+      FloatingActionButton(
         onPressed: addPerson,
+
         backgroundColor: olive,
+
         foregroundColor: Colors.white,
+
         elevation: 6,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(18),
+
+        shape:
+        RoundedRectangleBorder(
+          borderRadius:
+          BorderRadius.circular(18),
         ),
+
         child: const Icon(
           Icons.add,
           size: 30,
@@ -313,7 +448,8 @@ class _BirthdaysScreenState extends State<BirthdaysScreen> {
       ),
 
       floatingActionButtonLocation:
-      FloatingActionButtonLocation.endFloat,
+      FloatingActionButtonLocation
+          .endFloat,
     );
   }
 }

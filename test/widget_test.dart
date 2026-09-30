@@ -1,25 +1,47 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:persona/main.dart';
-import 'package:persona/screens/home_screen.dart';
+import 'package:persona/screens/login_screen.dart';
+import 'package:persona/services/theme_service.dart';
 
 void main() {
   group('PersonaApp', () {
+    testWidgets(
+      'creates the Persona application',
+          (WidgetTester tester) async {
+        final ThemeService themeService =
+        ThemeService();
 
-    testWidgets('creates the Persona application', (WidgetTester tester) async {
-      await tester.pumpWidget(
-        const PersonaApp(),
-      );
+        await tester.pumpWidget(
+          PersonaApp(
+            themeService: themeService,
+          ),
+        );
 
-      expect(find.byType(MaterialApp), findsOneWidget);
-    });
+        expect(
+          find.byType(MaterialApp),
+          findsOneWidget,
+        );
+      },
+    );
 
-    testWidgets('displays the HomeScreen', (WidgetTester tester) async {
-      await tester.pumpWidget(
-        const PersonaApp(),
-      );
+    testWidgets(
+      'displays the LoginScreen',
+          (WidgetTester tester) async {
+        final ThemeService themeService =
+        ThemeService();
 
-      expect(find.byType(HomeScreen), findsOneWidget);
-    });
+        await tester.pumpWidget(
+          PersonaApp(
+            themeService: themeService,
+          ),
+        );
+
+        expect(
+          find.byType(LoginScreen),
+          findsOneWidget,
+        );
+      },
+    );
   });
 }

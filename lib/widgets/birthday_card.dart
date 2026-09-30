@@ -59,7 +59,7 @@ class BirthdayCard extends StatelessWidget {
           '${person.birthday.day}/'
               '${person.birthday.month}/'
               '${person.birthday.year}\n'
-              '${days == 0 ? 'Birthday today!' : '$days days to go'}'
+              '${days == 0 ? 'Birthday today🎂🎉!' : '$days days to go'}'
               '${person.phoneNumber != null ? '\n${person.phoneNumber}' : ''}',
         ),
 

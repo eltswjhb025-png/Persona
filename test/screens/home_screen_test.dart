@@ -4,70 +4,124 @@ import 'package:persona/screens/home_screen.dart';
 
 void main() {
   group('HomeScreen', () {
-    testWidgets('displays the Persona title', (WidgetTester tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: HomeScreen(),
-        ),
-      );
+    testWidgets(
+      'displays Persona title',
+          (WidgetTester tester) async {
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: HomeScreen(),
+          ),
+        );
 
-      expect(find.text('Persona'), findsOneWidget);
-    });
-
-    testWidgets('displays Birthday Reminder text', (WidgetTester tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: HomeScreen(),
-        ),
-      );
-
-      expect(find.text('Birthday Reminder'), findsOneWidget);
-    });
+        expect(
+          find.text('Persona'),
+          findsOneWidget,
+        );
+      },
+    );
 
     testWidgets(
-        'displays the My Birthdays button', (WidgetTester tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: HomeScreen(),
-        ),
-      );
+      'displays Welcome to Persona text',
+          (WidgetTester tester) async {
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: HomeScreen(),
+          ),
+        );
 
-      expect(find.text('My Birthdays'), findsOneWidget);
-    });
+        expect(
+          find.text('Welcome to Persona'),
+          findsOneWidget,
+        );
+      },
+    );
 
     testWidgets(
-        'displays the Test Notification button', (WidgetTester tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: HomeScreen(),
-        ),
-      );
+      'displays My Birthdays menu',
+          (WidgetTester tester) async {
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: HomeScreen(),
+          ),
+        );
 
-      expect(find.text('Test Notification'), findsOneWidget);
-    });
+        expect(
+          find.text('My Birthdays'),
+          findsOneWidget,
+        );
+      },
+    );
 
-    testWidgets('displays the Test Scheduled Notification button',
-            (WidgetTester tester) async {
-          await tester.pumpWidget(
-            const MaterialApp(
-              home: HomeScreen(),
-            ),
-          );
+    testWidgets(
+      'displays Calendar menu',
+          (WidgetTester tester) async {
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: HomeScreen(),
+          ),
+        );
 
-          expect(
-            find.text('Test Scheduled Notification'),
-            findsOneWidget,
-          );
-        });
+        expect(
+          find.text('Calendar'),
+          findsOneWidget,
+        );
+      },
+    );
 
-    testWidgets('contains the cake icon', (WidgetTester tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: HomeScreen(),
-        ),
-      );
+    testWidgets(
+      'displays Locator menu',
+          (WidgetTester tester) async {
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: HomeScreen(),
+          ),
+        );
 
-      expect(find.byIcon(Icons.cake), findsOneWidget);
-    });
+        await tester.ensureVisible(
+          find.text('Locator'),
+        );
+
+        expect(
+          find.text('Locator'),
+          findsOneWidget,
+        );
+      },
+    );
+
+    testWidgets(
+      'displays SOS menu',
+          (WidgetTester tester) async {
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: HomeScreen(),
+          ),
+        );
+
+        await tester.ensureVisible(
+          find.text('SOS'),
+        );
+
+        expect(
+          find.text('SOS'),
+          findsOneWidget,
+        );
+      },
+    );
+
+    testWidgets(
+      'displays Settings button',
+          (WidgetTester tester) async {
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: HomeScreen(),
+          ),
+        );
+
+        expect(
+          find.byIcon(Icons.settings_outlined),
+          findsOneWidget,
+        );
+      },
+    );
   });
 }
