@@ -6,6 +6,7 @@ import 'package:googleapis/calendar/v3.dart' as calendar;
 import '../database/database_helper.dart';
 import '../models/person.dart';
 import '../services/google_calendar_service.dart';
+import '../services/theme_service.dart';
 
 import 'sos_screen.dart';
 import 'birthdays_screen.dart';
@@ -29,6 +30,9 @@ class _HomeScreenState extends State<HomeScreen> {
   static const Color olive = Color(0xFF808000);
   static const Color darkOlive = Color(0xFF3F4A16);
   static const Color lightCream = Color(0xFFF4F5E9);
+
+  static const Color darkBackground = Color(0xFF1E2412);
+  static const Color darkCard = Color(0xFF2B321B);
 
   // ============================================================
   // Database
@@ -129,8 +133,9 @@ class _HomeScreenState extends State<HomeScreen> {
       }
 
       setState(() {
-        upcomingEvent =
-        possibleEvents.isEmpty ? null : possibleEvents.first;
+        upcomingEvent = possibleEvents.isEmpty
+            ? null
+            : possibleEvents.first;
 
         isLoadingUpcoming = false;
       });
@@ -223,49 +228,65 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final ThemeService themeService =
+    ThemeProvider.of(context);
+
     final bool isDarkMode =
-        Theme.of(context).brightness == Brightness.dark;
+        themeService.isDarkMode;
 
     return Scaffold(
       extendBodyBehindAppBar: true,
-      backgroundColor:
-      isDarkMode ? const Color(0xFF202414) : lightCream,
+
+      backgroundColor: isDarkMode
+          ? darkBackground
+          : lightCream,
+
       appBar: _buildAppBar(context),
+
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
+
             colors: isDarkMode
                 ? const [
-              Color(0xFF252B17),
-              Color(0xFF3F4A16),
-              Color(0xFF202414),
+              darkOlive,
+              darkCard,
+              darkBackground,
             ]
                 : const [
-              Color(0xFF808000),
-              Color(0xFF6B8E23),
+              olive,
+              oliveDrab,
               Color(0xFF556B2F),
             ],
           ),
         ),
+
         child: SafeArea(
           child: RefreshIndicator(
             onRefresh: loadUpcomingEvent,
+
             color: oliveDrab,
+
             child: SingleChildScrollView(
               physics: const BouncingScrollPhysics(
-                parent: AlwaysScrollableScrollPhysics(),
+                parent:
+                AlwaysScrollableScrollPhysics(),
               ),
-              padding: const EdgeInsets.fromLTRB(
+
+              padding:
+              const EdgeInsets.fromLTRB(
                 20,
                 20,
                 20,
                 30,
               ),
+
               child: Column(
                 crossAxisAlignment:
                 CrossAxisAlignment.start,
+
                 children: [
                   // --------------------------------------------------
                   // WELCOME
@@ -279,7 +300,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   // UPCOMING EVENT
                   // --------------------------------------------------
 
-                  _buildUpcomingEvent(),
+                  _buildUpcomingEvent(
+                    isDarkMode,
+                  ),
 
                   const SizedBox(height: 10),
 
@@ -309,19 +332,27 @@ class _HomeScreenState extends State<HomeScreen> {
 
                   _buildFeatureCard(
                     context,
+
+                    isDarkMode: isDarkMode,
+
                     icon: Icons.cake_outlined,
                     title: 'Birthdays',
                     subtitle:
                     'Never miss an important birthday',
                     iconColor: oliveDrab,
-                    onTap: () {
-                      Navigator.push(
+
+                    onTap: () async {
+                      await Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder: (context) =>
                           const BirthdaysScreen(),
                         ),
                       );
+
+                      if (mounted) {
+                        loadUpcomingEvent();
+                      }
                     },
                   ),
 
@@ -333,19 +364,28 @@ class _HomeScreenState extends State<HomeScreen> {
 
                   _buildFeatureCard(
                     context,
-                    icon: Icons.calendar_month_outlined,
+
+                    isDarkMode: isDarkMode,
+
+                    icon:
+                    Icons.calendar_month_outlined,
                     title: 'Calendar',
                     subtitle:
                     'Keep track of your important events',
                     iconColor: olive,
-                    onTap: () {
-                      Navigator.push(
+
+                    onTap: () async {
+                      await Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder: (context) =>
                           const CalendarScreen(),
                         ),
                       );
+
+                      if (mounted) {
+                        loadUpcomingEvent();
+                      }
                     },
                   ),
 
@@ -357,11 +397,16 @@ class _HomeScreenState extends State<HomeScreen> {
 
                   _buildFeatureCard(
                     context,
-                    icon: Icons.location_on_outlined,
+
+                    isDarkMode: isDarkMode,
+
+                    icon:
+                    Icons.location_on_outlined,
                     title: 'Locator',
                     subtitle:
                     'Find and share your location',
                     iconColor: darkOlive,
+
                     onTap: () {
                       Navigator.push(
                         context,
@@ -381,12 +426,17 @@ class _HomeScreenState extends State<HomeScreen> {
 
                   _buildFeatureCard(
                     context,
+
+                    isDarkMode: isDarkMode,
+
                     icon: Icons.sos_outlined,
                     title: 'SOS',
                     subtitle:
                     'Emergency assistance when you need it',
+
                     iconColor:
                     const Color(0xFFB94A48),
+
                     onTap: () {
                       Navigator.push(
                         context,
@@ -396,6 +446,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       );
                     },
+
                     isEmergency: true,
                   ),
 
@@ -426,18 +477,27 @@ class _HomeScreenState extends State<HomeScreen> {
       backgroundColor: Colors.transparent,
       elevation: 0,
       centerTitle: false,
+
       title: Row(
         children: [
           Container(
             height: 42,
             width: 42,
+
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.18),
+              color: Colors.white.withValues(
+                alpha: 0.18,
+              ),
+
               shape: BoxShape.circle,
+
               border: Border.all(
-                color: Colors.white.withOpacity(0.30),
+                color: Colors.white.withValues(
+                  alpha: 0.30,
+                ),
               ),
             ),
+
             child: const Icon(
               Icons.spa_outlined,
               color: Colors.white,
@@ -449,6 +509,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
           const Text(
             'Persona',
+
             style: TextStyle(
               color: Colors.white,
               fontSize: 22,
@@ -458,11 +519,15 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
+
       actions: [
         Padding(
-          padding: const EdgeInsets.only(right: 14),
+          padding:
+          const EdgeInsets.only(right: 14),
+
           child: _buildGlassIconButton(
             icon: Icons.settings_outlined,
+
             onTap: () {
               Navigator.push(
                 context,
@@ -486,9 +551,11 @@ class _HomeScreenState extends State<HomeScreen> {
     return Column(
       crossAxisAlignment:
       CrossAxisAlignment.start,
+
       children: [
         const Text(
           'Welcome back 👋',
+
           style: TextStyle(
             color: Colors.white70,
             fontSize: 16,
@@ -500,6 +567,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
         const Text(
           'Your world,\nall in one place.',
+
           style: TextStyle(
             color: Colors.white,
             fontSize: 34,
@@ -513,8 +581,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
         Text(
           'Birthdays, events, location and emergency support.',
+
           style: TextStyle(
-            color: Colors.white.withOpacity(0.78),
+            color: Colors.white.withValues(
+              alpha: 0.78,
+            ),
             fontSize: 15,
             height: 1.4,
           ),
@@ -527,39 +598,64 @@ class _HomeScreenState extends State<HomeScreen> {
   // UPCOMING EVENT
   // ============================================================
 
-  Widget _buildUpcomingEvent() {
+  Widget _buildUpcomingEvent(
+      bool isDarkMode,
+      ) {
     return ClipRRect(
-      borderRadius: BorderRadius.circular(26),
+      borderRadius:
+      BorderRadius.circular(26),
+
       child: BackdropFilter(
         filter: ImageFilter.blur(
           sigmaX: 16,
           sigmaY: 16,
         ),
+
         child: Container(
           width: double.infinity,
-          padding: const EdgeInsets.fromLTRB(
+
+          padding:
+          const EdgeInsets.fromLTRB(
             20,
             18,
             20,
             20,
           ),
+
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.16),
-            borderRadius: BorderRadius.circular(26),
+            color: isDarkMode
+                ? Colors.black.withValues(
+              alpha: 0.22,
+            )
+                : Colors.white.withValues(
+              alpha: 0.16,
+            ),
+
+            borderRadius:
+            BorderRadius.circular(26),
+
             border: Border.all(
-              color: Colors.white.withOpacity(0.25),
+              color: Colors.white.withValues(
+                alpha: isDarkMode
+                    ? 0.18
+                    : 0.25,
+              ),
               width: 1,
             ),
           ),
+
           child: isLoadingUpcoming
               ? const SizedBox(
             height: 135,
+
             child: Center(
-              child: CircularProgressIndicator(
+              child:
+              CircularProgressIndicator(
                 color: Colors.white,
               ),
             ),
           )
+
               : upcomingEvent == null
               ? _buildNoUpcomingEvent()
               : _buildUpcomingEventContent(),
@@ -579,11 +675,15 @@ class _HomeScreenState extends State<HomeScreen> {
     return Column(
       crossAxisAlignment:
       CrossAxisAlignment.start,
+
       children: [
         Text(
           'UPCOMING EVENT',
+
           style: TextStyle(
-            color: Colors.white.withOpacity(0.68),
+            color: Colors.white.withValues(
+              alpha: 0.68,
+            ),
             fontSize: 11,
             fontWeight: FontWeight.w800,
             letterSpacing: 1.6,
@@ -597,12 +697,15 @@ class _HomeScreenState extends State<HomeScreen> {
             Container(
               height: 46,
               width: 46,
+
               decoration: BoxDecoration(
-                color:
-                Colors.white.withOpacity(0.16),
+                color: Colors.white.withValues(
+                  alpha: 0.16,
+                ),
                 borderRadius:
                 BorderRadius.circular(14),
               ),
+
               child: Icon(
                 event.icon,
                 color: Colors.white,
@@ -615,6 +718,7 @@ class _HomeScreenState extends State<HomeScreen> {
             Expanded(
               child: Text(
                 event.title,
+
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 21,
@@ -636,12 +740,16 @@ class _HomeScreenState extends State<HomeScreen> {
             Container(
               height: 31,
               width: 31,
+
               decoration: BoxDecoration(
                 color:
-                Colors.white.withOpacity(0.16),
+                Colors.white.withValues(
+                  alpha: 0.16,
+                ),
                 borderRadius:
                 BorderRadius.circular(10),
               ),
+
               child: const Icon(
                 Icons.calendar_today_outlined,
                 color: Colors.white,
@@ -654,11 +762,15 @@ class _HomeScreenState extends State<HomeScreen> {
             Expanded(
               child: Text(
                 _formatDate(event.date),
+
                 style: TextStyle(
                   color:
-                  Colors.white.withOpacity(0.88),
+                  Colors.white.withValues(
+                    alpha: 0.88,
+                  ),
                   fontSize: 14,
-                  fontWeight: FontWeight.w500,
+                  fontWeight:
+                  FontWeight.w500,
                 ),
               ),
             ),
@@ -678,12 +790,16 @@ class _HomeScreenState extends State<HomeScreen> {
               Container(
                 height: 31,
                 width: 31,
+
                 decoration: BoxDecoration(
                   color:
-                  Colors.white.withOpacity(0.16),
+                  Colors.white.withValues(
+                    alpha: 0.16,
+                  ),
                   borderRadius:
                   BorderRadius.circular(10),
                 ),
+
                 child: const Icon(
                   Icons.access_time_outlined,
                   color: Colors.white,
@@ -695,11 +811,15 @@ class _HomeScreenState extends State<HomeScreen> {
 
               Text(
                 _formatTime(event.date),
+
                 style: TextStyle(
                   color:
-                  Colors.white.withOpacity(0.88),
+                  Colors.white.withValues(
+                    alpha: 0.88,
+                  ),
                   fontSize: 14,
-                  fontWeight: FontWeight.w500,
+                  fontWeight:
+                  FontWeight.w500,
                 ),
               ),
             ],
@@ -717,11 +837,15 @@ class _HomeScreenState extends State<HomeScreen> {
     return Column(
       crossAxisAlignment:
       CrossAxisAlignment.start,
+
       children: [
         Text(
           'UPCOMING EVENT',
+
           style: TextStyle(
-            color: Colors.white.withOpacity(0.68),
+            color: Colors.white.withValues(
+              alpha: 0.68,
+            ),
             fontSize: 11,
             fontWeight: FontWeight.w800,
             letterSpacing: 1.6,
@@ -743,10 +867,12 @@ class _HomeScreenState extends State<HomeScreen> {
             Expanded(
               child: Text(
                 'Nothing coming up',
+
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 21,
-                  fontWeight: FontWeight.w700,
+                  fontWeight:
+                  FontWeight.w700,
                 ),
               ),
             ),
@@ -758,8 +884,11 @@ class _HomeScreenState extends State<HomeScreen> {
         Text(
           'Your upcoming birthdays and calendar events '
               'will appear here.',
+
           style: TextStyle(
-            color: Colors.white.withOpacity(0.75),
+            color: Colors.white.withValues(
+              alpha: 0.75,
+            ),
             fontSize: 14,
             height: 1.4,
           ),
@@ -832,9 +961,11 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildEventIndicators() {
     return SizedBox(
       width: double.infinity,
+
       child: Row(
         mainAxisAlignment:
         MainAxisAlignment.center,
+
         children: [
           _buildIndicator(active: true),
           const SizedBox(width: 7),
@@ -858,13 +989,18 @@ class _HomeScreenState extends State<HomeScreen> {
     return AnimatedContainer(
       duration:
       const Duration(milliseconds: 250),
+
       height: 7,
       width: 7,
+
       decoration: BoxDecoration(
         shape: BoxShape.circle,
+
         color: active
             ? Colors.white
-            : Colors.white.withOpacity(0.35),
+            : Colors.white.withValues(
+          alpha: 0.35,
+        ),
       ),
     );
   }
@@ -880,9 +1016,11 @@ class _HomeScreenState extends State<HomeScreen> {
     return Column(
       crossAxisAlignment:
       CrossAxisAlignment.start,
+
       children: [
         Text(
           title,
+
           style: const TextStyle(
             color: Colors.white,
             fontSize: 22,
@@ -894,8 +1032,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
         Text(
           subtitle,
+
           style: TextStyle(
-            color: Colors.white.withOpacity(0.70),
+            color: Colors.white.withValues(
+              alpha: 0.70,
+            ),
             fontSize: 14,
           ),
         ),
@@ -909,6 +1050,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildFeatureCard(
       BuildContext context, {
+        required bool isDarkMode,
         required IconData icon,
         required String title,
         required String subtitle,
@@ -917,33 +1059,52 @@ class _HomeScreenState extends State<HomeScreen> {
         bool isEmergency = false,
       }) {
     return ClipRRect(
-      borderRadius: BorderRadius.circular(25),
+      borderRadius:
+      BorderRadius.circular(25),
+
       child: BackdropFilter(
         filter: ImageFilter.blur(
           sigmaX: 14,
           sigmaY: 14,
         ),
+
         child: Material(
           color: isEmergency
               ? const Color(0xFF8F3535)
-              .withOpacity(0.35)
-              : Colors.white.withOpacity(0.15),
+              .withValues(alpha: 0.35)
+              : isDarkMode
+              ? Colors.black.withValues(
+            alpha: 0.20,
+          )
+              : Colors.white.withValues(
+            alpha: 0.15,
+          ),
+
           child: InkWell(
             onTap: onTap,
+
             borderRadius:
             BorderRadius.circular(25),
+
             child: Container(
               padding:
               const EdgeInsets.all(17),
+
               decoration: BoxDecoration(
                 borderRadius:
                 BorderRadius.circular(25),
+
                 border: Border.all(
                   color:
-                  Colors.white.withOpacity(0.22),
+                  Colors.white.withValues(
+                    alpha: isDarkMode
+                        ? 0.18
+                        : 0.22,
+                  ),
                   width: 1,
                 ),
               ),
+
               child: Row(
                 children: [
                   // ------------------------------------------
@@ -953,20 +1114,32 @@ class _HomeScreenState extends State<HomeScreen> {
                   Container(
                     height: 58,
                     width: 58,
+
                     decoration: BoxDecoration(
                       color: isEmergency
-                          ? const Color(0xFFB94A48)
-                          .withOpacity(0.85)
+                          ? const Color(
+                        0xFFB94A48,
+                      ).withValues(
+                        alpha: 0.85,
+                      )
                           : Colors.white
-                          .withOpacity(0.90),
+                          .withValues(
+                        alpha: 0.90,
+                      ),
+
                       borderRadius:
-                      BorderRadius.circular(18),
+                      BorderRadius.circular(
+                        18,
+                      ),
                     ),
+
                     child: Icon(
                       icon,
+
                       color: isEmergency
                           ? Colors.white
                           : iconColor,
+
                       size: 29,
                     ),
                   ),
@@ -981,10 +1154,13 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: Column(
                       crossAxisAlignment:
                       CrossAxisAlignment.start,
+
                       children: [
                         Text(
                           title,
-                          style: const TextStyle(
+
+                          style:
+                          const TextStyle(
                             color: Colors.white,
                             fontSize: 18,
                             fontWeight:
@@ -996,9 +1172,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
                         Text(
                           subtitle,
+
                           style: TextStyle(
                             color: Colors.white
-                                .withOpacity(0.70),
+                                .withValues(
+                              alpha: 0.70,
+                            ),
                             fontSize: 13,
                             height: 1.25,
                           ),
@@ -1016,13 +1195,18 @@ class _HomeScreenState extends State<HomeScreen> {
                   Container(
                     height: 36,
                     width: 36,
+
                     decoration: BoxDecoration(
                       color:
-                      Colors.white.withOpacity(0.12),
+                      Colors.white.withValues(
+                        alpha: 0.12,
+                      ),
                       shape: BoxShape.circle,
                     ),
+
                     child: const Icon(
-                      Icons.arrow_forward_ios_rounded,
+                      Icons
+                          .arrow_forward_ios_rounded,
                       color: Colors.white,
                       size: 15,
                     ),
@@ -1050,20 +1234,31 @@ class _HomeScreenState extends State<HomeScreen> {
           sigmaX: 10,
           sigmaY: 10,
         ),
+
         child: Material(
-          color: Colors.white.withOpacity(0.15),
+          color:
+          Colors.white.withValues(
+            alpha: 0.15,
+          ),
+
           child: InkWell(
             onTap: onTap,
+
             child: Container(
               height: 44,
               width: 44,
+
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
+
                 border: Border.all(
                   color:
-                  Colors.white.withOpacity(0.25),
+                  Colors.white.withValues(
+                    alpha: 0.25,
+                  ),
                 ),
               ),
+
               child: Icon(
                 icon,
                 color: Colors.white,
@@ -1087,15 +1282,23 @@ class _HomeScreenState extends State<HomeScreen> {
           Container(
             height: 45,
             width: 45,
+
             decoration: BoxDecoration(
               color:
-              Colors.white.withOpacity(0.12),
+              Colors.white.withValues(
+                alpha: 0.12,
+              ),
+
               shape: BoxShape.circle,
+
               border: Border.all(
                 color:
-                Colors.white.withOpacity(0.20),
+                Colors.white.withValues(
+                  alpha: 0.20,
+                ),
               ),
             ),
+
             child: const Icon(
               Icons.spa_outlined,
               color: Colors.white70,
@@ -1107,9 +1310,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
           Text(
             'PERSONA',
+
             style: TextStyle(
               color:
-              Colors.white.withOpacity(0.55),
+              Colors.white.withValues(
+                alpha: 0.55,
+              ),
               fontSize: 11,
               fontWeight: FontWeight.w700,
               letterSpacing: 3,

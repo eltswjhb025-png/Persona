@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import '../models/calendar_event.dart';
+import '../services/theme_service.dart';
 
 class AddCalendarEventScreen extends StatefulWidget {
   final CalendarEvent? event;
@@ -26,6 +27,9 @@ class _AddCalendarEventScreenState
   static const Color olive = Color(0xFF808000);
   static const Color darkOlive = Color(0xFF3F4A16);
   static const Color lightCream = Color(0xFFF4F5E9);
+
+  static const Color darkBackground = Color(0xFF1E2412);
+  static const Color darkCard = Color(0xFF2B321B);
 
   // ============================================================
   // Controllers
@@ -75,15 +79,31 @@ class _AddCalendarEventScreenState
   // ============================================================
 
   Future<void> selectDate() async {
-    final DateTime? pickedDate = await showDatePicker(
+    final ThemeService themeService =
+    ThemeProvider.of(context);
+
+    final bool isDarkMode =
+        themeService.isDarkMode;
+
+    final DateTime? pickedDate =
+    await showDatePicker(
       context: context,
-      initialDate: selectedDate ?? DateTime.now(),
+      initialDate:
+      selectedDate ?? DateTime.now(),
       firstDate: DateTime(1900),
       lastDate: DateTime(2100),
+
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
+            colorScheme: isDarkMode
+                ? const ColorScheme.dark(
+              primary: oliveDrab,
+              onPrimary: Colors.white,
+              surface: darkCard,
+              onSurface: Colors.white,
+            )
+                : const ColorScheme.light(
               primary: oliveDrab,
               onPrimary: Colors.white,
               surface: lightCream,
@@ -107,13 +127,29 @@ class _AddCalendarEventScreenState
   // ============================================================
 
   Future<void> selectTime() async {
-    final TimeOfDay? pickedTime = await showTimePicker(
+    final ThemeService themeService =
+    ThemeProvider.of(context);
+
+    final bool isDarkMode =
+        themeService.isDarkMode;
+
+    final TimeOfDay? pickedTime =
+    await showTimePicker(
       context: context,
-      initialTime: selectedTime ?? TimeOfDay.now(),
+      initialTime:
+      selectedTime ?? TimeOfDay.now(),
+
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
+            colorScheme: isDarkMode
+                ? const ColorScheme.dark(
+              primary: oliveDrab,
+              onPrimary: Colors.white,
+              surface: darkCard,
+              onSurface: Colors.white,
+            )
+                : const ColorScheme.light(
               primary: oliveDrab,
               onPrimary: Colors.white,
               surface: lightCream,
@@ -137,27 +173,35 @@ class _AddCalendarEventScreenState
   // ============================================================
 
   void saveEvent() {
-    final String title = titleController.text.trim();
+    final String title =
+    titleController.text.trim();
 
     final String description =
     descriptionController.text.trim();
 
     if (title.isEmpty) {
-      _showMessage('Please enter an event title');
+      _showMessage(
+        'Please enter an event title',
+      );
       return;
     }
 
     if (selectedDate == null) {
-      _showMessage('Please select a date');
+      _showMessage(
+        'Please select a date',
+      );
       return;
     }
 
     if (selectedTime == null) {
-      _showMessage('Please select a time');
+      _showMessage(
+        'Please select a time',
+      );
       return;
     }
 
-    final DateTime eventDateTime = DateTime(
+    final DateTime eventDateTime =
+    DateTime(
       selectedDate!.year,
       selectedDate!.month,
       selectedDate!.day,
@@ -165,22 +209,39 @@ class _AddCalendarEventScreenState
       selectedTime!.minute,
     );
 
-    if (reminder && eventDateTime.isBefore(DateTime.now())) {
-      _showMessage('Reminder time must be in the future');
+    if (reminder &&
+        eventDateTime.isBefore(
+          DateTime.now(),
+        )) {
+      _showMessage(
+        'Reminder time must be in the future',
+      );
       return;
     }
 
-    final CalendarEvent event = CalendarEvent(
+    final CalendarEvent event =
+    CalendarEvent(
       id: widget.event?.id ??
-          DateTime.now().millisecondsSinceEpoch.toString(),
+          DateTime.now()
+              .millisecondsSinceEpoch
+              .toString(),
+
       title: title,
+
       date: eventDateTime,
+
       description:
-      description.isEmpty ? null : description,
+      description.isEmpty
+          ? null
+          : description,
+
       reminder: reminder,
     );
 
-    Navigator.pop(context, event);
+    Navigator.pop(
+      context,
+      event,
+    );
   }
 
   // ============================================================
@@ -188,7 +249,14 @@ class _AddCalendarEventScreenState
   // ============================================================
 
   void _showMessage(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
+    final ThemeService themeService =
+    ThemeProvider.of(context);
+
+    final bool isDarkMode =
+        themeService.isDarkMode;
+
+    ScaffoldMessenger.of(context)
+        .showSnackBar(
       SnackBar(
         content: Text(
           message,
@@ -197,10 +265,18 @@ class _AddCalendarEventScreenState
             fontWeight: FontWeight.w500,
           ),
         ),
-        backgroundColor: darkOlive,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14),
+
+        backgroundColor: isDarkMode
+            ? darkOlive
+            : darkOlive,
+
+        behavior:
+        SnackBarBehavior.floating,
+
+        shape:
+        RoundedRectangleBorder(
+          borderRadius:
+          BorderRadius.circular(14),
         ),
       ),
     );
@@ -214,37 +290,77 @@ class _AddCalendarEventScreenState
     required String label,
     required String hint,
     required IconData icon,
+    required bool isDarkMode,
   }) {
+    final Color secondaryText =
+    Colors.white.withValues(
+      alpha: 0.85,
+    );
+
+    final Color hintText =
+    Colors.white.withValues(
+      alpha: 0.45,
+    );
+
+    final Color fillColor = isDarkMode
+        ? Colors.black.withValues(
+      alpha: 0.18,
+    )
+        : Colors.white.withValues(
+      alpha: 0.12,
+    );
+
+    final Color borderColor =
+    Colors.white.withValues(
+      alpha: isDarkMode
+          ? 0.20
+          : 0.25,
+    );
+
     return InputDecoration(
       labelText: label,
       hintText: hint,
+
       prefixIcon: Icon(
         icon,
-        color: Colors.white.withValues(alpha: 0.85),
+        color: secondaryText,
       ),
+
       labelStyle: TextStyle(
-        color: Colors.white.withValues(alpha: 0.85),
+        color: secondaryText,
       ),
+
       hintStyle: TextStyle(
-        color: Colors.white.withValues(alpha: 0.45),
+        color: hintText,
       ),
+
       filled: true,
-      fillColor: Colors.white.withValues(alpha: 0.12),
+      fillColor: fillColor,
+
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(18),
+        borderRadius:
+        BorderRadius.circular(18),
         borderSide: BorderSide(
-          color: Colors.white.withValues(alpha: 0.25),
+          color: borderColor,
         ),
       ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(18),
+
+      enabledBorder:
+      OutlineInputBorder(
+        borderRadius:
+        BorderRadius.circular(18),
         borderSide: BorderSide(
-          color: Colors.white.withValues(alpha: 0.25),
+          color: borderColor,
         ),
       ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(18),
-        borderSide: const BorderSide(
+
+      focusedBorder:
+      const OutlineInputBorder(
+        borderRadius:
+        BorderRadius.all(
+          Radius.circular(18),
+        ),
+        borderSide: BorderSide(
           color: Colors.white,
           width: 1.5,
         ),
@@ -258,25 +374,45 @@ class _AddCalendarEventScreenState
 
   Widget glassCard({
     required Widget child,
+    required bool isDarkMode,
     EdgeInsetsGeometry padding =
     const EdgeInsets.all(20),
   }) {
     return ClipRRect(
-      borderRadius: BorderRadius.circular(24),
+      borderRadius:
+      BorderRadius.circular(24),
+
       child: BackdropFilter(
         filter: ImageFilter.blur(
           sigmaX: 15,
           sigmaY: 15,
         ),
+
         child: Container(
           padding: padding,
+
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.13),
-            borderRadius: BorderRadius.circular(24),
+            color: isDarkMode
+                ? Colors.black.withValues(
+              alpha: 0.20,
+            )
+                : Colors.white.withValues(
+              alpha: 0.13,
+            ),
+
+            borderRadius:
+            BorderRadius.circular(24),
+
             border: Border.all(
-              color: Colors.white.withValues(alpha: 0.25),
+              color:
+              Colors.white.withValues(
+                alpha: isDarkMode
+                    ? 0.18
+                    : 0.25,
+              ),
             ),
           ),
+
           child: child,
         ),
       ),
@@ -287,22 +423,44 @@ class _AddCalendarEventScreenState
   // Date Card
   // ============================================================
 
-  Widget buildDateSelector() {
+  Widget buildDateSelector(
+      bool isDarkMode,
+      ) {
     return InkWell(
       onTap: selectDate,
-      borderRadius: BorderRadius.circular(18),
+
+      borderRadius:
+      BorderRadius.circular(18),
+
       child: Container(
-        padding: const EdgeInsets.symmetric(
+        padding:
+        const EdgeInsets.symmetric(
           horizontal: 16,
           vertical: 17,
         ),
+
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.12),
-          borderRadius: BorderRadius.circular(18),
+          color: isDarkMode
+              ? Colors.black.withValues(
+            alpha: 0.18,
+          )
+              : Colors.white.withValues(
+            alpha: 0.12,
+          ),
+
+          borderRadius:
+          BorderRadius.circular(18),
+
           border: Border.all(
-            color: Colors.white.withValues(alpha: 0.25),
+            color:
+            Colors.white.withValues(
+              alpha: isDarkMode
+                  ? 0.20
+                  : 0.25,
+            ),
           ),
         ),
+
         child: Row(
           children: [
             const Icon(
@@ -316,25 +474,35 @@ class _AddCalendarEventScreenState
               child: Column(
                 crossAxisAlignment:
                 CrossAxisAlignment.start,
+
                 children: [
                   Text(
                     'Date',
+
                     style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.65),
+                      color:
+                      Colors.white.withValues(
+                        alpha: 0.65,
+                      ),
                       fontSize: 12,
                     ),
                   ),
+
                   const SizedBox(height: 4),
+
                   Text(
                     selectedDate == null
                         ? 'Select date'
                         : '${selectedDate!.day}/'
                         '${selectedDate!.month}/'
                         '${selectedDate!.year}',
-                    style: const TextStyle(
+
+                    style:
+                    const TextStyle(
                       color: Colors.white,
                       fontSize: 16,
-                      fontWeight: FontWeight.w500,
+                      fontWeight:
+                      FontWeight.w500,
                     ),
                   ),
                 ],
@@ -343,7 +511,11 @@ class _AddCalendarEventScreenState
 
             Icon(
               Icons.chevron_right,
-              color: Colors.white.withValues(alpha: 0.65),
+
+              color:
+              Colors.white.withValues(
+                alpha: 0.65,
+              ),
             ),
           ],
         ),
@@ -355,22 +527,44 @@ class _AddCalendarEventScreenState
   // Time Card
   // ============================================================
 
-  Widget buildTimeSelector() {
+  Widget buildTimeSelector(
+      bool isDarkMode,
+      ) {
     return InkWell(
       onTap: selectTime,
-      borderRadius: BorderRadius.circular(18),
+
+      borderRadius:
+      BorderRadius.circular(18),
+
       child: Container(
-        padding: const EdgeInsets.symmetric(
+        padding:
+        const EdgeInsets.symmetric(
           horizontal: 16,
           vertical: 17,
         ),
+
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.12),
-          borderRadius: BorderRadius.circular(18),
+          color: isDarkMode
+              ? Colors.black.withValues(
+            alpha: 0.18,
+          )
+              : Colors.white.withValues(
+            alpha: 0.12,
+          ),
+
+          borderRadius:
+          BorderRadius.circular(18),
+
           border: Border.all(
-            color: Colors.white.withValues(alpha: 0.25),
+            color:
+            Colors.white.withValues(
+              alpha: isDarkMode
+                  ? 0.20
+                  : 0.25,
+            ),
           ),
         ),
+
         child: Row(
           children: [
             const Icon(
@@ -384,23 +578,34 @@ class _AddCalendarEventScreenState
               child: Column(
                 crossAxisAlignment:
                 CrossAxisAlignment.start,
+
                 children: [
                   Text(
                     'Time',
+
                     style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.65),
+                      color:
+                      Colors.white.withValues(
+                        alpha: 0.65,
+                      ),
                       fontSize: 12,
                     ),
                   ),
+
                   const SizedBox(height: 4),
+
                   Text(
                     selectedTime == null
                         ? 'Select time'
-                        : selectedTime!.format(context),
-                    style: const TextStyle(
+                        : selectedTime!
+                        .format(context),
+
+                    style:
+                    const TextStyle(
                       color: Colors.white,
                       fontSize: 16,
-                      fontWeight: FontWeight.w500,
+                      fontWeight:
+                      FontWeight.w500,
                     ),
                   ),
                 ],
@@ -409,7 +614,11 @@ class _AddCalendarEventScreenState
 
             Icon(
               Icons.chevron_right,
-              color: Colors.white.withValues(alpha: 0.65),
+
+              color:
+              Colors.white.withValues(
+                alpha: 0.65,
+              ),
             ),
           ],
         ),
@@ -425,6 +634,7 @@ class _AddCalendarEventScreenState
   void dispose() {
     titleController.dispose();
     descriptionController.dispose();
+
     super.dispose();
   }
 
@@ -434,13 +644,22 @@ class _AddCalendarEventScreenState
 
   @override
   Widget build(BuildContext context) {
-    final bool isEditing = widget.event != null;
+    final bool isEditing =
+        widget.event != null;
+
+    final ThemeService themeService =
+    ThemeProvider.of(context);
+
+    final bool isDarkMode =
+        themeService.isDarkMode;
 
     return Scaffold(
       extendBodyBehindAppBar: true,
 
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor:
+        Colors.transparent,
+
         elevation: 0,
 
         leading: IconButton(
@@ -448,26 +667,37 @@ class _AddCalendarEventScreenState
             Icons.arrow_back_ios_new,
             color: Colors.white,
           ),
-          onPressed: () => Navigator.pop(context),
+
+          onPressed: () =>
+              Navigator.pop(context),
         ),
 
         title: Text(
           isEditing
               ? 'Edit Calendar Event'
               : 'Add Calendar Event',
+
           style: const TextStyle(
             color: Colors.white,
-            fontWeight: FontWeight.w600,
+            fontWeight:
+            FontWeight.w600,
           ),
         ),
       ),
 
       body: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
+
+            colors: isDarkMode
+                ? const [
+              darkOlive,
+              darkCard,
+              darkBackground,
+            ]
+                : const [
               oliveDrab,
               olive,
               darkOlive,
@@ -477,7 +707,8 @@ class _AddCalendarEventScreenState
 
         child: SafeArea(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(
+            padding:
+            const EdgeInsets.fromLTRB(
               20,
               20,
               20,
@@ -494,54 +725,88 @@ class _AddCalendarEventScreenState
                 // ==================================================
 
                 glassCard(
+                  isDarkMode:
+                  isDarkMode,
+
                   child: Row(
                     children: [
                       Container(
                         width: 58,
                         height: 58,
-                        decoration: BoxDecoration(
+
+                        decoration:
+                        BoxDecoration(
                           color: Colors.white
-                              .withValues(alpha: 0.18),
-                          shape: BoxShape.circle,
-                          border: Border.all(
+                              .withValues(
+                            alpha: isDarkMode
+                                ? 0.12
+                                : 0.18,
+                          ),
+
+                          shape:
+                          BoxShape.circle,
+
+                          border:
+                          Border.all(
                             color: Colors.white
-                                .withValues(alpha: 0.25),
+                                .withValues(
+                              alpha: isDarkMode
+                                  ? 0.20
+                                  : 0.25,
+                            ),
                           ),
                         ),
+
                         child: const Icon(
-                          Icons.event_note_outlined,
-                          color: Colors.white,
+                          Icons
+                              .event_note_outlined,
+                          color:
+                          Colors.white,
                           size: 29,
                         ),
                       ),
 
-                      const SizedBox(width: 16),
+                      const SizedBox(
+                        width: 16,
+                      ),
 
                       Expanded(
                         child: Column(
                           crossAxisAlignment:
-                          CrossAxisAlignment.start,
+                          CrossAxisAlignment
+                              .start,
+
                           children: [
                             Text(
                               isEditing
                                   ? 'Update your event'
                                   : 'Create a new event',
-                              style: const TextStyle(
-                                color: Colors.white,
+
+                              style:
+                              const TextStyle(
+                                color:
+                                Colors.white,
                                 fontSize: 19,
-                                fontWeight: FontWeight.bold,
+                                fontWeight:
+                                FontWeight
+                                    .bold,
                               ),
                             ),
 
-                            const SizedBox(height: 5),
+                            const SizedBox(
+                              height: 5,
+                            ),
 
                             Text(
                               isEditing
                                   ? 'Make changes to your calendar event.'
                                   : 'Add something important to your calendar.',
+
                               style: TextStyle(
                                 color: Colors.white
-                                    .withValues(alpha: 0.7),
+                                    .withValues(
+                                  alpha: 0.70,
+                                ),
                                 fontSize: 13,
                               ),
                             ),
@@ -552,93 +817,149 @@ class _AddCalendarEventScreenState
                   ),
                 ),
 
-                const SizedBox(height: 20),
+                const SizedBox(
+                  height: 20,
+                ),
 
                 // ==================================================
                 // Event Details
                 // ==================================================
 
                 glassCard(
+                  isDarkMode:
+                  isDarkMode,
+
                   child: Column(
                     crossAxisAlignment:
-                    CrossAxisAlignment.stretch,
+                    CrossAxisAlignment
+                        .stretch,
+
                     children: [
                       const Text(
                         'Event Details',
-                        style: TextStyle(
-                          color: Colors.white,
+
+                        style:
+                        TextStyle(
+                          color:
+                          Colors.white,
                           fontSize: 18,
-                          fontWeight: FontWeight.bold,
+                          fontWeight:
+                          FontWeight
+                              .bold,
                         ),
                       ),
 
-                      const SizedBox(height: 18),
+                      const SizedBox(
+                        height: 18,
+                      ),
 
                       TextField(
-                        controller: titleController,
-                        style: const TextStyle(
-                          color: Colors.white,
+                        controller:
+                        titleController,
+
+                        style:
+                        const TextStyle(
+                          color:
+                          Colors.white,
                         ),
+
                         decoration:
                         glassInputDecoration(
-                          label: 'Event Title',
-                          hint: 'Enter event title',
-                          icon: Icons.title_outlined,
+                          label:
+                          'Event Title',
+                          hint:
+                          'Enter event title',
+                          icon:
+                          Icons.title_outlined,
+                          isDarkMode:
+                          isDarkMode,
                         ),
                       ),
 
-                      const SizedBox(height: 16),
+                      const SizedBox(
+                        height: 16,
+                      ),
 
-                      buildDateSelector(),
+                      buildDateSelector(
+                        isDarkMode,
+                      ),
 
-                      const SizedBox(height: 16),
+                      const SizedBox(
+                        height: 16,
+                      ),
 
-                      buildTimeSelector(),
+                      buildTimeSelector(
+                        isDarkMode,
+                      ),
 
-                      const SizedBox(height: 16),
+                      const SizedBox(
+                        height: 16,
+                      ),
 
                       TextField(
                         controller:
                         descriptionController,
+
                         maxLines: 4,
-                        style: const TextStyle(
-                          color: Colors.white,
+
+                        style:
+                        const TextStyle(
+                          color:
+                          Colors.white,
                         ),
+
                         decoration:
                         glassInputDecoration(
-                          label: 'Description',
+                          label:
+                          'Description',
                           hint:
                           'Enter event description',
-                          icon:
-                          Icons.description_outlined,
+                          icon: Icons
+                              .description_outlined,
+                          isDarkMode:
+                          isDarkMode,
                         ),
                       ),
                     ],
                   ),
                 ),
 
-                const SizedBox(height: 20),
+                const SizedBox(
+                  height: 20,
+                ),
 
                 // ==================================================
                 // Reminder
                 // ==================================================
 
                 glassCard(
-                  padding: const EdgeInsets.symmetric(
+                  isDarkMode:
+                  isDarkMode,
+
+                  padding:
+                  const EdgeInsets.symmetric(
                     horizontal: 12,
                     vertical: 8,
                   ),
-                  child: CheckboxListTile(
+
+                  child:
+                  CheckboxListTile(
                     contentPadding:
-                    const EdgeInsets.symmetric(
+                    const EdgeInsets
+                        .symmetric(
                       horizontal: 4,
                     ),
 
                     title: const Text(
                       'Reminder',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600,
+
+                      style:
+                      TextStyle(
+                        color:
+                        Colors.white,
+                        fontWeight:
+                        FontWeight
+                            .w600,
                       ),
                     ),
 
@@ -646,42 +967,67 @@ class _AddCalendarEventScreenState
                       reminder
                           ? 'You will receive a reminder for this event.'
                           : 'No reminder will be scheduled.',
+
                       style: TextStyle(
                         color: Colors.white
-                            .withValues(alpha: 0.65),
+                            .withValues(
+                          alpha: 0.65,
+                        ),
                         fontSize: 12,
                       ),
                     ),
 
-                    secondary: Container(
+                    secondary:
+                    Container(
                       width: 42,
                       height: 42,
-                      decoration: BoxDecoration(
+
+                      decoration:
+                      BoxDecoration(
                         color: Colors.white
-                            .withValues(alpha: 0.15),
+                            .withValues(
+                          alpha: isDarkMode
+                              ? 0.10
+                              : 0.15,
+                        ),
+
                         borderRadius:
-                        BorderRadius.circular(13),
+                        BorderRadius
+                            .circular(
+                          13,
+                        ),
                       ),
-                      child: const Icon(
-                        Icons.notifications_none,
-                        color: Colors.white,
+
+                      child:
+                      const Icon(
+                        Icons
+                            .notifications_none,
+                        color:
+                        Colors.white,
                       ),
                     ),
 
-                    activeColor: Colors.white,
-                    checkColor: oliveDrab,
+                    activeColor:
+                    Colors.white,
+
+                    checkColor:
+                    oliveDrab,
 
                     value: reminder,
 
-                    onChanged: (bool? value) {
+                    onChanged:
+                        (bool? value) {
                       setState(() {
-                        reminder = value ?? false;
+                        reminder =
+                            value ?? false;
                       });
                     },
                   ),
                 ),
 
-                const SizedBox(height: 26),
+                const SizedBox(
+                  height: 26,
+                ),
 
                 // ==================================================
                 // Save Button
@@ -689,40 +1035,64 @@ class _AddCalendarEventScreenState
 
                 SizedBox(
                   height: 56,
-                  child: ElevatedButton.icon(
-                    onPressed: saveEvent,
+
+                  child:
+                  ElevatedButton.icon(
+                    onPressed:
+                    saveEvent,
 
                     icon: Icon(
                       isEditing
                           ? Icons.check
                           : Icons.add,
-                      color: darkOlive,
+
+                      color:
+                      darkOlive,
                     ),
 
                     label: Text(
                       isEditing
                           ? 'UPDATE EVENT'
                           : 'SAVE EVENT',
-                      style: const TextStyle(
-                        color: darkOlive,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 0.8,
+
+                      style:
+                      const TextStyle(
+                        color:
+                        darkOlive,
+                        fontWeight:
+                        FontWeight
+                            .bold,
+                        letterSpacing:
+                        0.8,
                       ),
                     ),
 
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      foregroundColor: darkOlive,
+                    style:
+                    ElevatedButton
+                        .styleFrom(
+                      backgroundColor:
+                      Colors.white,
+
+                      foregroundColor:
+                      darkOlive,
+
                       elevation: 4,
-                      shape: RoundedRectangleBorder(
+
+                      shape:
+                      RoundedRectangleBorder(
                         borderRadius:
-                        BorderRadius.circular(18),
+                        BorderRadius
+                            .circular(
+                          18,
+                        ),
                       ),
                     ),
                   ),
                 ),
 
-                const SizedBox(height: 28),
+                const SizedBox(
+                  height: 28,
+                ),
 
                 // ==================================================
                 // Persona Branding
@@ -730,24 +1100,39 @@ class _AddCalendarEventScreenState
 
                 Row(
                   mainAxisAlignment:
-                  MainAxisAlignment.center,
+                  MainAxisAlignment
+                      .center,
+
                   children: [
                     Icon(
                       Icons.spa_outlined,
+
                       color: Colors.white
-                          .withValues(alpha: 0.65),
+                          .withValues(
+                        alpha: 0.65,
+                      ),
+
                       size: 18,
                     ),
 
-                    const SizedBox(width: 8),
+                    const SizedBox(
+                      width: 8,
+                    ),
 
                     Text(
                       'PERSONA',
+
                       style: TextStyle(
                         color: Colors.white
-                            .withValues(alpha: 0.65),
+                            .withValues(
+                          alpha: 0.65,
+                        ),
+
                         fontSize: 12,
-                        fontWeight: FontWeight.bold,
+
+                        fontWeight:
+                        FontWeight.bold,
+
                         letterSpacing: 2,
                       ),
                     ),

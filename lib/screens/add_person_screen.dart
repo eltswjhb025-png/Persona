@@ -2,867 +2,976 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import '../models/person.dart';
+import '../services/theme_service.dart';
 
 class AddPersonScreen extends StatefulWidget {
-final Person? person;
+  final Person? person;
 
-const AddPersonScreen({
-super.key,
-this.person,
-});
+  const AddPersonScreen({
+    super.key,
+    this.person,
+  });
 
-@override
-State<AddPersonScreen> createState() =>
-_AddPersonScreenState();
+  @override
+  State<AddPersonScreen> createState() =>
+      _AddPersonScreenState();
 }
 
 class _AddPersonScreenState
-extends State<AddPersonScreen> {
-final TextEditingController nameController =
-TextEditingController();
+    extends State<AddPersonScreen> {
+  final TextEditingController nameController =
+  TextEditingController();
 
-final TextEditingController phoneController =
-TextEditingController();
+  final TextEditingController phoneController =
+  TextEditingController();
 
-DateTime? selectedBirthday;
+  DateTime? selectedBirthday;
 
 // ============================================================
 // PERSONA COLOURS
 // ============================================================
 
-static const Color oliveDrab =
-Color(0xFF6B8E23);
+  static const Color oliveDrab =
+  Color(0xFF6B8E23);
 
-static const Color olive =
-Color(0xFF808000);
+  static const Color olive =
+  Color(0xFF808000);
 
-static const Color darkOlive =
-Color(0xFF3F4A16);
+  static const Color darkOlive =
+  Color(0xFF3F4A16);
 
-static const Color lightCream =
-Color(0xFFF4F5E9);
+  static const Color lightCream =
+  Color(0xFFF4F5E9);
+
+  static const Color darkBackground =
+  Color(0xFF1E2412);
+
+  static const Color darkCard =
+  Color(0xFF2B321B);
 
 // ============================================================
 // INITIALIZE
 // ============================================================
 
-@override
-void initState() {
-super.initState();
+  @override
+  void initState() {
+    super.initState();
 
-if (widget.person != null) {
-nameController.text =
-widget.person!.name;
+    if (widget.person != null) {
+      nameController.text =
+          widget.person!.name;
 
-phoneController.text =
-widget.person!.phoneNumber ?? '';
+      phoneController.text =
+          widget.person!.phoneNumber ?? '';
 
-selectedBirthday =
-widget.person!.birthday;
-}
-}
+      selectedBirthday =
+          widget.person!.birthday;
+    }
+  }
 
 // ============================================================
 // SELECT BIRTHDAY
 // ============================================================
 
-Future<void> selectBirthday() async {
-// Remove keyboard before opening the date picker.
-FocusScope.of(context).unfocus();
+  Future<void> selectBirthday() async {
+    // Remove keyboard before opening the date picker.
+    FocusScope.of(context).unfocus();
 
-final DateTime? pickedDate =
-await showDatePicker(
-context: context,
-initialDate:
-selectedBirthday ?? DateTime.now(),
-firstDate:
-DateTime(1900),
-lastDate:
-DateTime.now(),
-builder: (context, child) {
-return Theme(
-data: Theme.of(context).copyWith(
-colorScheme:
-const ColorScheme.light(
-primary: olive,
-onPrimary: Colors.white,
-surface: lightCream,
-onSurface: darkOlive,
-),
-),
-child: child!,
-);
-},
-);
+    final ThemeService themeService =
+    ThemeProvider.of(context);
 
-if (!mounted) return;
+    final bool isDarkMode =
+        themeService.isDarkMode;
 
-if (pickedDate != null) {
-setState(() {
-selectedBirthday =
-pickedDate;
-});
-}
-}
+    final DateTime? pickedDate =
+    await showDatePicker(
+      context: context,
+
+      initialDate:
+      selectedBirthday ?? DateTime.now(),
+
+      firstDate:
+      DateTime(1900),
+
+      lastDate:
+      DateTime.now(),
+
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: isDarkMode
+                ? const ColorScheme.dark(
+              primary: oliveDrab,
+              onPrimary: Colors.white,
+              surface: darkCard,
+              onSurface: Colors.white,
+            )
+                : const ColorScheme.light(
+              primary: olive,
+              onPrimary: Colors.white,
+              surface: lightCream,
+              onSurface: darkOlive,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (!mounted) return;
+
+    if (pickedDate != null) {
+      setState(() {
+        selectedBirthday =
+            pickedDate;
+      });
+    }
+  }
 
 // ============================================================
 // SAVE PERSON
 // ============================================================
 
-Future<void> savePerson() async {
-// Remove the keyboard before navigating away.
-FocusScope.of(context).unfocus();
+  Future<void> savePerson() async {
+    // Remove the keyboard before navigating away.
+    FocusScope.of(context).unfocus();
 
-final String name =
-nameController.text.trim();
+    final String name =
+    nameController.text.trim();
 
-final String phoneNumber =
-phoneController.text.trim();
+    final String phoneNumber =
+    phoneController.text.trim();
+
+    // Get current theme.
+    final ThemeService themeService =
+    ThemeProvider.of(context);
+
+    final bool isDarkMode =
+        themeService.isDarkMode;
 
 // ==========================================================
 // VALIDATE NAME
 // ==========================================================
 
-if (name.isEmpty) {
-ScaffoldMessenger.of(context)
-    .showSnackBar(
-SnackBar(
-backgroundColor:
-darkOlive,
-behavior:
-SnackBarBehavior.floating,
-shape:
-RoundedRectangleBorder(
-borderRadius:
-BorderRadius.circular(14),
-),
-content: const Text(
-'Please enter a name',
-style: TextStyle(
-color: Colors.white,
-),
-),
-),
-);
+    if (name.isEmpty) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(
+        SnackBar(
+          backgroundColor:
+          isDarkMode
+              ? darkOlive
+              : darkOlive,
 
-return;
-}
+          behavior:
+          SnackBarBehavior.floating,
+
+          shape:
+          RoundedRectangleBorder(
+            borderRadius:
+            BorderRadius.circular(14),
+          ),
+
+          content: const Text(
+            'Please enter a name',
+            style: TextStyle(
+              color: Colors.white,
+            ),
+          ),
+        ),
+      );
+
+      return;
+    }
 
 // ==========================================================
 // VALIDATE BIRTHDAY
 // ==========================================================
 
-if (selectedBirthday == null) {
-ScaffoldMessenger.of(context)
-    .showSnackBar(
-SnackBar(
-backgroundColor:
-darkOlive,
-behavior:
-SnackBarBehavior.floating,
-shape:
-RoundedRectangleBorder(
-borderRadius:
-BorderRadius.circular(14),
-),
-content: const Text(
-'Please select a birthday',
-style: TextStyle(
-color: Colors.white,
-),
-),
-),
-);
+    if (selectedBirthday == null) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(
+        SnackBar(
+          backgroundColor:
+          isDarkMode
+              ? darkOlive
+              : darkOlive,
 
-return;
-}
+          behavior:
+          SnackBarBehavior.floating,
+
+          shape:
+          RoundedRectangleBorder(
+            borderRadius:
+            BorderRadius.circular(14),
+          ),
+
+          content: const Text(
+            'Please select a birthday',
+            style: TextStyle(
+              color: Colors.white,
+            ),
+          ),
+        ),
+      );
+
+      return;
+    }
 
 // ==========================================================
 // CREATE PERSON
 // ==========================================================
 
-final Person person =
-Person(
-id: widget.person?.id ??
-DateTime.now()
-    .millisecondsSinceEpoch
-    .toString(),
+    final Person person =
+    Person(
+      id: widget.person?.id ??
+          DateTime.now()
+              .millisecondsSinceEpoch
+              .toString(),
 
-name: name,
+      name: name,
 
-birthday:
-selectedBirthday!,
+      birthday:
+      selectedBirthday!,
 
-phoneNumber:
-phoneNumber.isEmpty
-? null
-    : phoneNumber,
-);
+      phoneNumber:
+      phoneNumber.isEmpty
+          ? null
+          : phoneNumber,
+    );
 
-// Give Flutter a moment to finish
-// removing the keyboard focus before
-// navigating away from this screen.
-await Future<void>.delayed(
-const Duration(milliseconds: 50),
-);
+    // Give Flutter a moment to finish
+    // removing the keyboard focus before
+    // navigating away from this screen.
+    await Future<void>.delayed(
+      const Duration(milliseconds: 50),
+    );
 
-if (!mounted) return;
+    if (!mounted) return;
 
 // ==========================================================
 // RETURN PERSON TO BIRTHDAYS SCREEN
 // ==========================================================
 
-Navigator.pop(
-context,
-person,
-);
-}
+    Navigator.pop(
+      context,
+      person,
+    );
+  }
 
 // ============================================================
 // DISPOSE
 // ============================================================
 
-@override
-void dispose() {
-nameController.dispose();
-phoneController.dispose();
+  @override
+  void dispose() {
+    nameController.dispose();
+    phoneController.dispose();
 
-super.dispose();
-}
+    super.dispose();
+  }
 
 // ============================================================
 // GLASS INPUT
 // ============================================================
 
-InputDecoration glassInputDecoration({
-required String label,
-required String hint,
-required IconData icon,
-}) {
-return InputDecoration(
-filled: true,
+  InputDecoration glassInputDecoration({
+    required String label,
+    required String hint,
+    required IconData icon,
+    required bool isDarkMode,
+  }) {
+    return InputDecoration(
+      filled: true,
 
-fillColor:
-Colors.white.withValues(
-alpha: 0.14,
-),
+      fillColor: isDarkMode
+          ? Colors.black.withValues(
+        alpha: 0.18,
+      )
+          : Colors.white.withValues(
+        alpha: 0.14,
+      ),
 
-labelText: label,
+      labelText: label,
 
-labelStyle: TextStyle(
-color:
-Colors.white.withValues(
-alpha: 0.85,
-),
-),
+      labelStyle: TextStyle(
+        color: Colors.white.withValues(
+          alpha: 0.85,
+        ),
+      ),
 
-hintText: hint,
+      hintText: hint,
 
-hintStyle: TextStyle(
-color:
-Colors.white.withValues(
-alpha: 0.5,
-),
-),
+      hintStyle: TextStyle(
+        color: Colors.white.withValues(
+          alpha: 0.5,
+        ),
+      ),
 
-prefixIcon: Icon(
-icon,
-color:
-Colors.white.withValues(
-alpha: 0.75,
-),
-),
+      prefixIcon: Icon(
+        icon,
+        color: Colors.white.withValues(
+          alpha: 0.75,
+        ),
+      ),
 
-contentPadding:
-const EdgeInsets.symmetric(
-horizontal: 18,
-vertical: 18,
-),
+      contentPadding:
+      const EdgeInsets.symmetric(
+        horizontal: 18,
+        vertical: 18,
+      ),
 
-border:
-OutlineInputBorder(
-borderRadius:
-BorderRadius.circular(18),
+      border: OutlineInputBorder(
+        borderRadius:
+        BorderRadius.circular(18),
 
-borderSide: BorderSide(
-color:
-Colors.white.withValues(
-alpha: 0.25,
-),
-),
-),
+        borderSide: BorderSide(
+          color: Colors.white.withValues(
+            alpha: isDarkMode
+                ? 0.18
+                : 0.25,
+          ),
+        ),
+      ),
 
-enabledBorder:
-OutlineInputBorder(
-borderRadius:
-BorderRadius.circular(18),
+      enabledBorder:
+      OutlineInputBorder(
+        borderRadius:
+        BorderRadius.circular(18),
 
-borderSide: BorderSide(
-color:
-Colors.white.withValues(
-alpha: 0.25,
-),
-),
-),
+        borderSide: BorderSide(
+          color: Colors.white.withValues(
+            alpha: isDarkMode
+                ? 0.18
+                : 0.25,
+          ),
+        ),
+      ),
 
-focusedBorder:
-OutlineInputBorder(
-borderRadius:
-BorderRadius.circular(18),
+      focusedBorder:
+      OutlineInputBorder(
+        borderRadius:
+        BorderRadius.circular(18),
 
-borderSide:
-const BorderSide(
-color: Colors.white,
-width: 2,
-),
-),
-);
-}
+        borderSide:
+        const BorderSide(
+          color: Colors.white,
+          width: 2,
+        ),
+      ),
+    );
+  }
 
 // ============================================================
 // GLASS CARD
 // ============================================================
 
-Widget glassCard({
-required Widget child,
-EdgeInsets padding =
-const EdgeInsets.all(20),
-double borderRadius = 26,
-}) {
-return ClipRRect(
-borderRadius:
-BorderRadius.circular(
-borderRadius,
-),
+  Widget glassCard({
+    required Widget child,
+    required bool isDarkMode,
+    EdgeInsets padding =
+    const EdgeInsets.all(20),
+    double borderRadius = 26,
+  }) {
+    return ClipRRect(
+      borderRadius:
+      BorderRadius.circular(
+        borderRadius,
+      ),
 
-child: BackdropFilter(
-filter: ImageFilter.blur(
-sigmaX: 14,
-sigmaY: 14,
-),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(
+          sigmaX: 14,
+          sigmaY: 14,
+        ),
 
-child: Container(
-padding: padding,
+        child: Container(
+          padding: padding,
 
-decoration: BoxDecoration(
-color:
-Colors.white.withValues(
-alpha: 0.14,
-),
+          decoration: BoxDecoration(
+            color: isDarkMode
+                ? Colors.black.withValues(
+              alpha: 0.18,
+            )
+                : Colors.white.withValues(
+              alpha: 0.14,
+            ),
 
-borderRadius:
-BorderRadius.circular(
-borderRadius,
-),
+            borderRadius:
+            BorderRadius.circular(
+              borderRadius,
+            ),
 
-border: Border.all(
-color:
-Colors.white.withValues(
-alpha: 0.28,
-),
-),
-),
+            border: Border.all(
+              color: Colors.white.withValues(
+                alpha: isDarkMode
+                    ? 0.16
+                    : 0.28,
+              ),
+            ),
 
-child: child,
-),
-),
-);
-}
+            boxShadow: isDarkMode
+                ? [
+              BoxShadow(
+                color: Colors.black
+                    .withValues(
+                  alpha: 0.25,
+                ),
+                blurRadius: 18,
+                offset:
+                const Offset(0, 8),
+              ),
+            ]
+                : null,
+          ),
+
+          child: child,
+        ),
+      ),
+    );
+  }
 
 // ============================================================
 // BUILD
 // ============================================================
 
-@override
-Widget build(
-BuildContext context) {
-final bool isEditing =
-widget.person != null;
+  @override
+  Widget build(
+      BuildContext context) {
+    final bool isEditing =
+        widget.person != null;
 
-return Scaffold(
-backgroundColor:
-oliveDrab,
+    final ThemeService themeService =
+    ThemeProvider.of(context);
 
-// Allows Flutter to resize the screen
-// when the keyboard appears.
-resizeToAvoidBottomInset: true,
+    final bool isDarkMode =
+        themeService.isDarkMode;
+
+    return Scaffold(
+      backgroundColor:
+      isDarkMode
+          ? darkBackground
+          : oliveDrab,
+
+      // Allows Flutter to resize the screen
+      // when the keyboard appears.
+      resizeToAvoidBottomInset: true,
 
 // ========================================================
 // APP BAR
 // ========================================================
 
-appBar: AppBar(
-backgroundColor:
-Colors.transparent,
+      appBar: AppBar(
+        backgroundColor:
+        Colors.transparent,
 
-elevation: 0,
+        elevation: 0,
 
-title: Row(
-children: [
-Container(
-padding:
-const EdgeInsets.all(9),
+        title: Row(
+          children: [
+            Container(
+              padding:
+              const EdgeInsets.all(9),
 
-decoration: BoxDecoration(
-color:
-Colors.white.withValues(
-alpha: 0.16,
-),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(
+                  alpha: isDarkMode
+                      ? 0.10
+                      : 0.16,
+                ),
 
-borderRadius:
-BorderRadius.circular(
-14,
-),
+                borderRadius:
+                BorderRadius.circular(
+                  14,
+                ),
 
-border: Border.all(
-color:
-Colors.white.withValues(
-alpha: 0.25,
-),
-),
-),
+                border: Border.all(
+                  color:
+                  Colors.white.withValues(
+                    alpha: isDarkMode
+                        ? 0.16
+                        : 0.25,
+                  ),
+                ),
+              ),
 
-child: const Icon(
-Icons.person_add_alt_1_outlined,
-color: Colors.white,
-size: 22,
-),
-),
+              child: const Icon(
+                Icons.person_add_alt_1_outlined,
+                color: Colors.white,
+                size: 22,
+              ),
+            ),
 
-const SizedBox(width: 12),
+            const SizedBox(width: 12),
 
-Text(
-isEditing
-? 'Edit Person'
-    : 'Add Person',
+            Text(
+              isEditing
+                  ? 'Edit Person'
+                  : 'Add Person',
 
-style:
-const TextStyle(
-color: Colors.white,
-fontWeight:
-FontWeight.bold,
-fontSize: 21,
-),
-),
-],
-),
-),
+              style:
+              const TextStyle(
+                color: Colors.white,
+                fontWeight:
+                FontWeight.bold,
+                fontSize: 21,
+              ),
+            ),
+          ],
+        ),
+      ),
 
 // ========================================================
 // BODY
 // ========================================================
 
-body: Container(
-decoration:
-const BoxDecoration(
-gradient:
-LinearGradient(
-begin:
-Alignment.topLeft,
-end:
-Alignment.bottomRight,
+      body: Container(
+        decoration:
+        BoxDecoration(
+          gradient:
+          LinearGradient(
+            begin:
+            Alignment.topLeft,
 
-colors: [
-oliveDrab,
-olive,
-darkOlive,
-],
-),
-),
+            end:
+            Alignment.bottomRight,
 
-child: SafeArea(
-top: false,
+            colors: isDarkMode
+                ? const [
+              Color(0xFF252B17),
+              Color(0xFF3F4A16),
+              Color(0xFF1E2412),
+            ]
+                : const [
+              oliveDrab,
+              olive,
+              darkOlive,
+            ],
+          ),
+        ),
 
-child:
-SingleChildScrollView(
-keyboardDismissBehavior:
-ScrollViewKeyboardDismissBehavior
-    .onDrag,
+        child: SafeArea(
+          top: false,
 
-padding:
-const EdgeInsets.fromLTRB(
-18,
-10,
-18,
-40,
-),
+          child:
+          SingleChildScrollView(
+            keyboardDismissBehavior:
+            ScrollViewKeyboardDismissBehavior
+                .onDrag,
 
-child: Column(
-crossAxisAlignment:
-CrossAxisAlignment
-    .stretch,
+            padding:
+            const EdgeInsets.fromLTRB(
+              18,
+              10,
+              18,
+              40,
+            ),
 
-children: [
+            child: Column(
+              crossAxisAlignment:
+              CrossAxisAlignment
+                  .stretch,
+
+              children: [
 // ==================================================
 // HEADER
 // ==================================================
 
-glassCard(
-padding:
-const EdgeInsets.all(
-20,
-),
+                glassCard(
+                  isDarkMode:
+                  isDarkMode,
 
-child: Row(
-children: [
-Container(
-padding:
-const EdgeInsets
-    .all(13),
+                  padding:
+                  const EdgeInsets.all(
+                    20,
+                  ),
 
-decoration:
-BoxDecoration(
-color: Colors.white
-    .withValues(
-alpha: 0.16,
-),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding:
+                        const EdgeInsets
+                            .all(13),
 
-shape:
-BoxShape.circle,
+                        decoration:
+                        BoxDecoration(
+                          color: Colors.white
+                              .withValues(
+                            alpha: isDarkMode
+                                ? 0.10
+                                : 0.16,
+                          ),
 
-border:
-Border.all(
-color: Colors
-    .white
-    .withValues(
-alpha: 0.2,
-),
-),
-),
+                          shape:
+                          BoxShape.circle,
 
-child: const Icon(
-Icons.cake_outlined,
-color:
-Colors.white,
-size: 28,
-),
-),
+                          border:
+                          Border.all(
+                            color: Colors
+                                .white
+                                .withValues(
+                              alpha:
+                              isDarkMode
+                                  ? 0.15
+                                  : 0.2,
+                            ),
+                          ),
+                        ),
 
-const SizedBox(
-width: 14,
-),
+                        child: const Icon(
+                          Icons.cake_outlined,
+                          color:
+                          Colors.white,
+                          size: 28,
+                        ),
+                      ),
 
-Expanded(
-child: Column(
-crossAxisAlignment:
-CrossAxisAlignment
-    .start,
+                      const SizedBox(
+                        width: 14,
+                      ),
 
-children: [
-Text(
-isEditing
-? 'Update Birthday'
-    : 'New Birthday',
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment:
+                          CrossAxisAlignment
+                              .start,
 
-style:
-const TextStyle(
-color:
-Colors.white,
-fontSize: 19,
-fontWeight:
-FontWeight.bold,
-),
-),
+                          children: [
+                            Text(
+                              isEditing
+                                  ? 'Update Birthday'
+                                  : 'New Birthday',
 
-const SizedBox(
-height: 5,
-),
+                              style:
+                              const TextStyle(
+                                color:
+                                Colors.white,
+                                fontSize: 19,
+                                fontWeight:
+                                FontWeight.bold,
+                              ),
+                            ),
 
-Text(
-isEditing
-? 'Update this person’s details.'
-    : 'Add someone special to Persona.',
+                            const SizedBox(
+                              height: 5,
+                            ),
 
-style:
-TextStyle(
-color: Colors
-    .white
-    .withValues(
-alpha: 0.7,
-),
+                            Text(
+                              isEditing
+                                  ? 'Update this person’s details.'
+                                  : 'Add someone special to Persona.',
 
-fontSize: 13,
-),
-),
-],
-),
-),
-],
-),
-),
+                              style:
+                              TextStyle(
+                                color: Colors
+                                    .white
+                                    .withValues(
+                                  alpha: 0.7,
+                                ),
 
-const SizedBox(
-height: 20,
-),
+                                fontSize: 13,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(
+                  height: 20,
+                ),
 
 // ==================================================
 // FORM
 // ==================================================
 
-glassCard(
-padding:
-const EdgeInsets.all(
-20,
-),
+                glassCard(
+                  isDarkMode:
+                  isDarkMode,
 
-child: Column(
-crossAxisAlignment:
-CrossAxisAlignment
-    .stretch,
+                  padding:
+                  const EdgeInsets.all(
+                    20,
+                  ),
 
-children: [
+                  child: Column(
+                    crossAxisAlignment:
+                    CrossAxisAlignment
+                        .stretch,
+
+                    children: [
 // ==========================================
 // NAME
 // ==========================================
 
-TextField(
-controller:
-nameController,
+                      TextField(
+                        controller:
+                        nameController,
 
-style:
-const TextStyle(
-color: Colors.white,
-),
+                        style:
+                        const TextStyle(
+                          color: Colors.white,
+                        ),
 
-decoration:
-glassInputDecoration(
-label: 'Name',
+                        decoration:
+                        glassInputDecoration(
+                          label: 'Name',
 
-hint:
-"Enter person's name",
+                          hint:
+                          "Enter person's name",
 
-icon:
-Icons.person_outline,
-),
-),
+                          icon:
+                          Icons.person_outline,
 
-const SizedBox(
-height: 18,
-),
+                          isDarkMode:
+                          isDarkMode,
+                        ),
+                      ),
+
+                      const SizedBox(
+                        height: 18,
+                      ),
 
 // ==========================================
 // BIRTHDAY
 // ==========================================
 
-InkWell(
-onTap:
-selectBirthday,
+                      InkWell(
+                        onTap:
+                        selectBirthday,
 
-borderRadius:
-BorderRadius.circular(
-18,
-),
+                        borderRadius:
+                        BorderRadius.circular(
+                          18,
+                        ),
 
-child:
-InputDecorator(
-decoration:
-glassInputDecoration(
-label:
-'Birthday',
+                        child:
+                        InputDecorator(
+                          decoration:
+                          glassInputDecoration(
+                            label:
+                            'Birthday',
 
-hint:
-'Select birthday',
+                            hint:
+                            'Select birthday',
 
-icon:
-Icons.cake_outlined,
-),
+                            icon:
+                            Icons.cake_outlined,
 
-child: Text(
-selectedBirthday ==
-null
-? 'Select birthday'
-    : '${selectedBirthday!.day}/'
-'${selectedBirthday!.month}/'
-'${selectedBirthday!.year}',
+                            isDarkMode:
+                            isDarkMode,
+                          ),
 
-style:
-TextStyle(
-color:
-selectedBirthday ==
-null
-? Colors
-    .white
-    .withValues(
-alpha: 0.5,
-)
-    : Colors
-    .white,
+                          child: Text(
+                            selectedBirthday ==
+                                null
+                                ? 'Select birthday'
+                                : '${selectedBirthday!.day}/'
+                                '${selectedBirthday!.month}/'
+                                '${selectedBirthday!.year}',
 
-fontSize: 16,
-),
-),
-),
-),
+                            style:
+                            TextStyle(
+                              color:
+                              selectedBirthday ==
+                                  null
+                                  ? Colors
+                                  .white
+                                  .withValues(
+                                alpha: 0.5,
+                              )
+                                  : Colors
+                                  .white,
 
-const SizedBox(
-height: 18,
-),
+                              fontSize: 16,
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(
+                        height: 18,
+                      ),
 
 // ==========================================
 // PHONE
 // ==========================================
 
-TextField(
-controller:
-phoneController,
+                      TextField(
+                        controller:
+                        phoneController,
 
-keyboardType:
-TextInputType.phone,
+                        keyboardType:
+                        TextInputType.phone,
 
-style:
-const TextStyle(
-color: Colors.white,
-),
+                        style:
+                        const TextStyle(
+                          color: Colors.white,
+                        ),
 
-decoration:
-glassInputDecoration(
-label:
-'Phone Number',
+                        decoration:
+                        glassInputDecoration(
+                          label:
+                          'Phone Number',
 
-hint:
-'Enter phone number',
+                          hint:
+                          'Enter phone number',
 
-icon:
-Icons.phone_outlined,
-),
-),
-],
-),
-),
+                          icon:
+                          Icons.phone_outlined,
 
-const SizedBox(
-height: 24,
-),
+                          isDarkMode:
+                          isDarkMode,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(
+                  height: 24,
+                ),
 
 // ==================================================
 // SAVE BUTTON
 // ==================================================
 
-SizedBox(
-height: 56,
+                SizedBox(
+                  height: 56,
 
-child:
-ElevatedButton(
-onPressed:
-savePerson,
+                  child:
+                  ElevatedButton(
+                    onPressed:
+                    savePerson,
 
-style:
-ElevatedButton
-    .styleFrom(
-backgroundColor:
-Colors.white,
+                    style:
+                    ElevatedButton
+                        .styleFrom(
+                      backgroundColor:
+                      isDarkMode
+                          ? const Color(
+                        0xFFE8ECD5,
+                      )
+                          : Colors.white,
 
-foregroundColor:
-darkOlive,
+                      foregroundColor:
+                      darkOlive,
 
-elevation: 4,
+                      elevation:
+                      isDarkMode
+                          ? 2
+                          : 4,
 
-shape:
-RoundedRectangleBorder(
-borderRadius:
-BorderRadius.circular(
-18,
-),
-),
-),
+                      shape:
+                      RoundedRectangleBorder(
+                        borderRadius:
+                        BorderRadius.circular(
+                          18,
+                        ),
+                      ),
+                    ),
 
-child: Row(
-mainAxisAlignment:
-MainAxisAlignment
-    .center,
+                    child: Row(
+                      mainAxisAlignment:
+                      MainAxisAlignment
+                          .center,
 
-children: [
-Icon(
-isEditing
-? Icons
-    .check_circle_outline
-    : Icons
-    .person_add_alt_1_outlined,
+                      children: [
+                        Icon(
+                          isEditing
+                              ? Icons
+                              .check_circle_outline
+                              : Icons
+                              .person_add_alt_1_outlined,
 
-size: 21,
-),
+                          size: 21,
+                        ),
 
-const SizedBox(
-width: 9,
-),
+                        const SizedBox(
+                          width: 9,
+                        ),
 
-Text(
-isEditing
-? 'Update Person'
-    : 'Save Person',
+                        Text(
+                          isEditing
+                              ? 'Update Person'
+                              : 'Save Person',
 
-style:
-const TextStyle(
-fontSize: 16,
-fontWeight:
-FontWeight.bold,
-),
-),
-],
-),
-),
-),
+                          style:
+                          const TextStyle(
+                            fontSize: 16,
+                            fontWeight:
+                            FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
 
-const SizedBox(
-height: 20,
-),
+                const SizedBox(
+                  height: 20,
+                ),
 
 // ==================================================
 // PERSONA BRANDING
 // ==================================================
 
-Row(
-mainAxisAlignment:
-MainAxisAlignment
-    .center,
+                Row(
+                  mainAxisAlignment:
+                  MainAxisAlignment
+                      .center,
 
-children: [
-Icon(
-Icons.spa_outlined,
-color:
-Colors.white
-    .withValues(
-alpha: 0.65,
-),
+                  children: [
+                    Icon(
+                      Icons.spa_outlined,
 
-size: 17,
-),
+                      color: Colors.white
+                          .withValues(
+                        alpha: 0.65,
+                      ),
 
-const SizedBox(
-width: 7,
-),
+                      size: 17,
+                    ),
 
-Text(
-'PERSONA',
-style: TextStyle(
-color: Colors.white
-    .withValues(
-alpha: 0.65,
-),
+                    const SizedBox(
+                      width: 7,
+                    ),
 
-fontSize: 12,
-fontWeight:
-FontWeight.bold,
-letterSpacing: 2,
-),
-),
-],
-),
+                    Text(
+                      'PERSONA',
 
-// Extra space so the keyboard
-// does not push the content into
-// an overflow.
-SizedBox(
-height:
-MediaQuery.of(context)
-    .viewInsets
-    .bottom,
-),
-],
-),
-),
-),
-),
-);
-}
+                      style: TextStyle(
+                        color: Colors.white
+                            .withValues(
+                          alpha: 0.65,
+                        ),
+
+                        fontSize: 12,
+
+                        fontWeight:
+                        FontWeight.bold,
+
+                        letterSpacing: 2,
+                      ),
+                    ),
+                  ],
+                ),
+
+                // Extra space so the keyboard
+                // does not push the content into
+                // an overflow.
+                SizedBox(
+                  height:
+                  MediaQuery.of(context)
+                      .viewInsets
+                      .bottom,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }

@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 
 import '../database/database_helper.dart';
+import '../services/theme_service.dart';
 
 class EmergencyContactsScreen extends StatefulWidget {
   const EmergencyContactsScreen({super.key});
@@ -22,6 +23,9 @@ class _EmergencyContactsScreenState
   static const Color olive = Color(0xFF808000);
   static const Color darkOlive = Color(0xFF3F4A16);
   static const Color lightCream = Color(0xFFF4F5E9);
+
+  static const Color darkBackground = Color(0xFF1E2412);
+  static const Color darkCard = Color(0xFF2B321B);
 
   // ============================================================
   // Database
@@ -144,7 +148,9 @@ class _EmergencyContactsScreenState
             'Are you sure you want to remove $name '
                 'from your emergency contacts?',
             style: TextStyle(
-              color: darkOlive.withOpacity(0.78),
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? Colors.white.withValues(alpha: 0.78)
+                  : darkOlive.withValues(alpha: 0.78),
               fontSize: 14,
               height: 1.4,
             ),
@@ -193,9 +199,9 @@ class _EmergencyContactsScreenState
       }
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
+        const SnackBar(
           backgroundColor: darkOlive,
-          content: const Text(
+          content: Text(
             'Emergency contact removed.',
           ),
         ),
@@ -531,19 +537,33 @@ class _EmergencyContactsScreenState
 
   @override
   Widget build(BuildContext context) {
+    final ThemeService themeService =
+    ThemeProvider.of(context);
+
+    final bool isDarkMode =
+        themeService.isDarkMode;
+
     return Scaffold(
       extendBodyBehindAppBar: true,
 
-      backgroundColor: darkOlive,
+      backgroundColor:
+      isDarkMode ? darkBackground : darkOlive,
 
-      appBar: _buildAppBar(),
+      appBar: _buildAppBar(isDarkMode),
 
       body: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
+            colors: isDarkMode
+                ? const [
+              Color(0xFF3F4A16),
+              Color(0xFF2B321B),
+              Color(0xFF1E2412),
+              Color(0xFF11150B),
+            ]
+                : const [
               Color(0xFF808000),
               Color(0xFF6B8E23),
               Color(0xFF556B2F),
@@ -560,11 +580,14 @@ class _EmergencyContactsScreenState
             ),
           )
               : contacts.isEmpty
-              ? _buildEmptyState()
+              ? _buildEmptyState(isDarkMode)
               : RefreshIndicator(
             onRefresh: loadContacts,
             color: oliveDrab,
-            backgroundColor: lightCream,
+            backgroundColor:
+            isDarkMode
+                ? darkCard
+                : lightCream,
             child: ListView.builder(
               padding:
               const EdgeInsets.fromLTRB(
@@ -587,6 +610,7 @@ class _EmergencyContactsScreenState
 
                 return _buildContactCard(
                   contact,
+                  isDarkMode,
                 );
               },
             ),
@@ -595,7 +619,7 @@ class _EmergencyContactsScreenState
       ),
 
       floatingActionButton:
-      _buildGlassFloatingButton(),
+      _buildGlassFloatingButton(isDarkMode),
     );
   }
 
@@ -603,10 +627,12 @@ class _EmergencyContactsScreenState
   // APP BAR
   // ============================================================
 
-  PreferredSizeWidget _buildAppBar() {
+  PreferredSizeWidget _buildAppBar(
+      bool isDarkMode,
+      ) {
     return AppBar(
       backgroundColor:
-      Colors.white.withOpacity(0.08),
+      Colors.white.withValues(alpha: 0.08),
       elevation: 0,
 
       title: Row(
@@ -616,11 +642,11 @@ class _EmergencyContactsScreenState
             width: 40,
             decoration: BoxDecoration(
               color:
-              Colors.white.withOpacity(0.16),
+              Colors.white.withValues(alpha: 0.16),
               shape: BoxShape.circle,
               border: Border.all(
                 color:
-                Colors.white.withOpacity(0.25),
+                Colors.white.withValues(alpha: 0.25),
               ),
             ),
             child: const Icon(
@@ -659,6 +685,20 @@ class _EmergencyContactsScreenState
     required Widget content,
     required List<Widget> actions,
   }) {
+    final bool isDarkMode =
+        Theme.of(context).brightness ==
+            Brightness.dark;
+
+    final Color dialogBackground =
+    isDarkMode
+        ? darkCard.withValues(alpha: 0.96)
+        : lightCream.withValues(alpha: 0.94);
+
+    final Color primaryText =
+    isDarkMode
+        ? Colors.white
+        : darkOlive;
+
     return Dialog(
       backgroundColor: Colors.transparent,
       insetPadding:
@@ -682,18 +722,23 @@ class _EmergencyContactsScreenState
               14,
             ),
             decoration: BoxDecoration(
-              color: lightCream.withOpacity(0.94),
+              color: dialogBackground,
               borderRadius:
               BorderRadius.circular(28),
               border: Border.all(
-                color:
-                Colors.white.withOpacity(0.80),
+                color: isDarkMode
+                    ? Colors.white
+                    .withValues(alpha: 0.12)
+                    : Colors.white
+                    .withValues(alpha: 0.80),
                 width: 1.2,
               ),
               boxShadow: [
                 BoxShadow(
                   color:
-                  Colors.black.withOpacity(0.18),
+                  Colors.black.withValues(
+                    alpha: 0.18,
+                  ),
                   blurRadius: 30,
                   offset:
                   const Offset(0, 12),
@@ -712,11 +757,11 @@ class _EmergencyContactsScreenState
                       width: 45,
                       decoration: BoxDecoration(
                         color: oliveDrab
-                            .withOpacity(0.15),
+                            .withValues(alpha: 0.15),
                         shape: BoxShape.circle,
                       ),
-                      child: Icon(
-                        icon,
+                      child: const Icon(
+                        Icons.contact_emergency_outlined,
                         color: oliveDrab,
                         size: 24,
                       ),
@@ -727,8 +772,8 @@ class _EmergencyContactsScreenState
                     Expanded(
                       child: Text(
                         title,
-                        style: const TextStyle(
-                          color: darkOlive,
+                        style: TextStyle(
+                          color: primaryText,
                           fontSize: 19,
                           fontWeight:
                           FontWeight.w800,
@@ -770,37 +815,61 @@ class _EmergencyContactsScreenState
     TextCapitalization textCapitalization =
         TextCapitalization.none,
   }) {
+    final bool isDarkMode =
+        Theme.of(context).brightness ==
+            Brightness.dark;
+
+    final Color textColor =
+    isDarkMode
+        ? Colors.white
+        : darkOlive;
+
+    final Color labelColor =
+    isDarkMode
+        ? Colors.white.withValues(alpha: 0.65)
+        : darkOlive.withValues(alpha: 0.65);
+
+    final Color fillColor =
+    isDarkMode
+        ? Colors.black.withValues(alpha: 0.18)
+        : Colors.white.withValues(alpha: 0.55);
+
+    final Color borderColor =
+    isDarkMode
+        ? Colors.white.withValues(alpha: 0.12)
+        : oliveDrab.withValues(alpha: 0.20);
+
     return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
       textCapitalization: textCapitalization,
-      style: const TextStyle(
-        color: darkOlive,
+
+      style: TextStyle(
+        color: textColor,
         fontWeight: FontWeight.w600,
       ),
+
       decoration: InputDecoration(
         labelText: label,
 
         labelStyle: TextStyle(
-          color: darkOlive.withOpacity(0.65),
+          color: labelColor,
         ),
 
-        prefixIcon: Icon(
-          icon,
+        prefixIcon: const Icon(
+          Icons.person_outline,
           color: oliveDrab,
         ),
 
         filled: true,
 
-        fillColor:
-        Colors.white.withOpacity(0.55),
+        fillColor: fillColor,
 
         border: OutlineInputBorder(
           borderRadius:
           BorderRadius.circular(16),
           borderSide: BorderSide(
-            color:
-            oliveDrab.withOpacity(0.20),
+            color: borderColor,
           ),
         ),
 
@@ -809,8 +878,7 @@ class _EmergencyContactsScreenState
           borderRadius:
           BorderRadius.circular(16),
           borderSide: BorderSide(
-            color:
-            oliveDrab.withOpacity(0.20),
+            color: borderColor,
           ),
         ),
 
@@ -852,7 +920,9 @@ class _EmergencyContactsScreenState
   // GLASS FLOATING ACTION BUTTON
   // ============================================================
 
-  Widget _buildGlassFloatingButton() {
+  Widget _buildGlassFloatingButton(
+      bool isDarkMode,
+      ) {
     return ClipOval(
       child: BackdropFilter(
         filter: ImageFilter.blur(
@@ -867,18 +937,24 @@ class _EmergencyContactsScreenState
               height: 60,
               width: 60,
               decoration: BoxDecoration(
-                color:
-                Colors.white.withOpacity(0.18),
+                color: Colors.white
+                    .withValues(
+                  alpha: isDarkMode
+                      ? 0.12
+                      : 0.18,
+                ),
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color:
-                  Colors.white.withOpacity(0.35),
+                  color: Colors.white
+                      .withValues(alpha: 0.35),
                   width: 1.2,
                 ),
                 boxShadow: [
                   BoxShadow(
                     color:
-                    Colors.black.withOpacity(0.18),
+                    Colors.black.withValues(
+                      alpha: 0.18,
+                    ),
                     blurRadius: 15,
                     offset:
                     const Offset(0, 6),
@@ -901,7 +977,9 @@ class _EmergencyContactsScreenState
   // EMPTY STATE
   // ============================================================
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(
+      bool isDarkMode,
+      ) {
     return Center(
       child: SingleChildScrollView(
         physics:
@@ -930,11 +1008,19 @@ class _EmergencyContactsScreenState
                   width: 100,
                   decoration: BoxDecoration(
                     color: Colors.white
-                        .withOpacity(0.14),
+                        .withValues(
+                      alpha: isDarkMode
+                          ? 0.08
+                          : 0.14,
+                    ),
                     shape: BoxShape.circle,
                     border: Border.all(
                       color: Colors.white
-                          .withOpacity(0.28),
+                          .withValues(
+                        alpha: isDarkMode
+                            ? 0.14
+                            : 0.28,
+                      ),
                       width: 1.2,
                     ),
                   ),
@@ -968,7 +1054,9 @@ class _EmergencyContactsScreenState
               textAlign: TextAlign.center,
               style: TextStyle(
                 color:
-                Colors.white.withOpacity(0.76),
+                Colors.white.withValues(
+                  alpha: 0.76,
+                ),
                 fontSize: 14,
                 height: 1.5,
               ),
@@ -1000,8 +1088,11 @@ class _EmergencyContactsScreenState
                   ElevatedButton.styleFrom(
                     backgroundColor:
                     Colors.white
-                        .withOpacity(0.90),
-                    foregroundColor: darkOlive,
+                        .withValues(
+                      alpha: 0.90,
+                    ),
+                    foregroundColor:
+                    darkOlive,
                     elevation: 0,
                     padding:
                     const EdgeInsets.symmetric(
@@ -1011,7 +1102,9 @@ class _EmergencyContactsScreenState
                     shape:
                     RoundedRectangleBorder(
                       borderRadius:
-                      BorderRadius.circular(17),
+                      BorderRadius.circular(
+                        17,
+                      ),
                     ),
                   ),
                 ),
@@ -1029,6 +1122,7 @@ class _EmergencyContactsScreenState
 
   Widget _buildContactCard(
       Map<String, dynamic> contact,
+      bool isDarkMode,
       ) {
     final String name =
     contact['name'] as String;
@@ -1056,21 +1150,33 @@ class _EmergencyContactsScreenState
 
             decoration: BoxDecoration(
               color: Colors.white
-                  .withOpacity(0.17),
+                  .withValues(
+                alpha: isDarkMode
+                    ? 0.08
+                    : 0.17,
+              ),
 
               borderRadius:
               BorderRadius.circular(24),
 
               border: Border.all(
                 color: Colors.white
-                    .withOpacity(0.27),
+                    .withValues(
+                  alpha: isDarkMode
+                      ? 0.12
+                      : 0.27,
+                ),
                 width: 1,
               ),
 
               boxShadow: [
                 BoxShadow(
                   color: Colors.black
-                      .withOpacity(0.10),
+                      .withValues(
+                    alpha: isDarkMode
+                        ? 0.20
+                        : 0.10,
+                  ),
                   blurRadius: 18,
                   offset:
                   const Offset(0, 7),
@@ -1089,11 +1195,19 @@ class _EmergencyContactsScreenState
                   width: 57,
                   decoration: BoxDecoration(
                     color: Colors.white
-                        .withOpacity(0.90),
+                        .withValues(
+                      alpha: isDarkMode
+                          ? 0.14
+                          : 0.90,
+                    ),
                     shape: BoxShape.circle,
                     border: Border.all(
                       color: Colors.white
-                          .withOpacity(0.50),
+                          .withValues(
+                        alpha: isDarkMode
+                            ? 0.16
+                            : 0.50,
+                      ),
                     ),
                   ),
                   child: const Icon(
@@ -1135,7 +1249,9 @@ class _EmergencyContactsScreenState
                             Icons.phone_outlined,
                             size: 15,
                             color: Colors.white
-                                .withOpacity(0.75),
+                                .withValues(
+                              alpha: 0.75,
+                            ),
                           ),
 
                           const SizedBox(width: 6),
@@ -1148,7 +1264,9 @@ class _EmergencyContactsScreenState
                               TextOverflow.ellipsis,
                               style: TextStyle(
                                 color: Colors.white
-                                    .withOpacity(0.72),
+                                    .withValues(
+                                  alpha: 0.72,
+                                ),
                                 fontSize: 13,
                               ),
                             ),
@@ -1170,6 +1288,7 @@ class _EmergencyContactsScreenState
                   onTap: () {
                     editContact(contact);
                   },
+                  isDarkMode: isDarkMode,
                 ),
 
                 const SizedBox(width: 5),
@@ -1185,6 +1304,7 @@ class _EmergencyContactsScreenState
                   onTap: () {
                     deleteContact(contact);
                   },
+                  isDarkMode: isDarkMode,
                 ),
               ],
             ),
@@ -1201,12 +1321,16 @@ class _EmergencyContactsScreenState
   Widget _buildCardActionButton({
     required IconData icon,
     required VoidCallback onTap,
+    required bool isDarkMode,
     Color? iconColor,
   }) {
     return ClipOval(
       child: Material(
-        color:
-        Colors.white.withOpacity(0.10),
+        color: Colors.white.withValues(
+          alpha: isDarkMode
+              ? 0.08
+              : 0.10,
+        ),
         child: InkWell(
           onTap: onTap,
           child: Container(
@@ -1216,7 +1340,11 @@ class _EmergencyContactsScreenState
               shape: BoxShape.circle,
               border: Border.all(
                 color: Colors.white
-                    .withOpacity(0.15),
+                    .withValues(
+                  alpha: isDarkMode
+                      ? 0.10
+                      : 0.15,
+                ),
               ),
             ),
             child: Icon(

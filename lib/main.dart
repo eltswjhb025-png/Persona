@@ -140,36 +140,91 @@ debugShowCheckedModeBanner: false,
 
 title: 'Persona',
 
-// ==========================================================
+/// ==========================================================
 // Light Theme
 // ==========================================================
 
-theme: ThemeData(
-brightness: Brightness.light,
+  theme: ThemeData(
+    brightness: Brightness.light,
 
-colorScheme: ColorScheme.fromSeed(
-seedColor: const Color(0xFF808000),
-brightness: Brightness.light,
-),
+    scaffoldBackgroundColor: const Color(0xFFF4F5E9),
 
-useMaterial3: true,
-),
+    colorScheme: ColorScheme.fromSeed(
+      seedColor: const Color(0xFF808000),
+      brightness: Brightness.light,
+    ),
+
+    appBarTheme: const AppBarTheme(
+      backgroundColor: Color(0xFF808000),
+      foregroundColor: Colors.white,
+    ),
+
+    cardTheme: const CardThemeData(
+      color: Colors.white,
+    ),
+
+    switchTheme: SwitchThemeData(
+      thumbColor: WidgetStateProperty.resolveWith(
+            (states) {
+          return states.contains(WidgetState.selected)
+              ? const Color(0xFF3F4A16)
+              : Colors.white;
+        },
+      ),
+      trackColor: WidgetStateProperty.resolveWith(
+            (states) {
+          return states.contains(WidgetState.selected)
+              ? const Color(0xFF808000)
+              : const Color(0xFFE0E0E0);
+        },
+      ),
+    ),
+
+    useMaterial3: true,
+  ),
 
 // ==========================================================
 // Dark Theme
 // ==========================================================
 
-darkTheme: ThemeData(
-brightness: Brightness.dark,
+  darkTheme: ThemeData(
+    brightness: Brightness.dark,
 
-colorScheme: ColorScheme.fromSeed(
-seedColor: const Color(0xFF6B8E23),
-brightness: Brightness.dark,
-),
+    scaffoldBackgroundColor: const Color(0xFF1E2412),
 
-useMaterial3: true,
-),
+    colorScheme: ColorScheme.fromSeed(
+      seedColor: const Color(0xFF6B8E23),
+      brightness: Brightness.dark,
+    ),
 
+    appBarTheme: const AppBarTheme(
+      backgroundColor: Color(0xFF3F4A16),
+      foregroundColor: Colors.white,
+    ),
+
+    cardTheme: const CardThemeData(
+      color: Color(0xFF2B321B),
+    ),
+
+    switchTheme: SwitchThemeData(
+      thumbColor: WidgetStateProperty.resolveWith(
+            (states) {
+          return states.contains(WidgetState.selected)
+              ? Colors.white
+              : const Color(0xFF808000);
+        },
+      ),
+      trackColor: WidgetStateProperty.resolveWith(
+            (states) {
+          return states.contains(WidgetState.selected)
+              ? const Color(0xFF6B8E23)
+              : const Color(0xFF454D30);
+        },
+      ),
+    ),
+
+    useMaterial3: true,
+  ),
 // ==========================================================
 // Current Theme
 // ==========================================================

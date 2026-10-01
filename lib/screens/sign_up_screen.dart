@@ -2,6 +2,8 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+
+import '../services/theme_service.dart';
 import 'home_screen.dart';
 
 class SignUpScreen extends StatefulWidget {
@@ -12,6 +14,14 @@ class SignUpScreen extends StatefulWidget {
 }
 
 class _SignUpScreenState extends State<SignUpScreen> {
+  static const Color olive = Color(0xFF808000);
+  static const Color oliveDrab = Color(0xFF6B8E23);
+  static const Color darkOlive = Color(0xFF3F4A16);
+  static const Color lightCream = Color(0xFFF4F5E9);
+
+  static const Color darkBackground = Color(0xFF1E2412);
+  static const Color darkCard = Color(0xFF2B321B);
+
   final TextEditingController nameController =
   TextEditingController();
 
@@ -146,11 +156,15 @@ class _SignUpScreenState extends State<SignUpScreen> {
   }
 
   void _showMessage(String message) {
+    final bool isDarkMode =
+        Theme.of(context).brightness == Brightness.dark;
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
         behavior: SnackBarBehavior.floating,
-        backgroundColor: const Color(0xFF3F4A16),
+        backgroundColor:
+        isDarkMode ? darkCard : darkOlive,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(14),
         ),
@@ -160,6 +174,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
   Widget _buildGlassContainer({
     required Widget child,
+    required bool isDarkMode,
     EdgeInsetsGeometry padding =
     const EdgeInsets.all(24),
   }) {
@@ -173,10 +188,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
         child: Container(
           padding: padding,
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.18),
+            color: isDarkMode
+                ? Colors.black.withValues(alpha: 0.22)
+                : Colors.white.withValues(alpha: 0.18),
             borderRadius: BorderRadius.circular(30),
             border: Border.all(
-              color: Colors.white.withValues(alpha: 0.35),
+              color: Colors.white.withValues(
+                alpha: isDarkMode ? 0.18 : 0.35,
+              ),
               width: 1.2,
             ),
           ),
@@ -190,50 +209,62 @@ class _SignUpScreenState extends State<SignUpScreen> {
     required String label,
     required String hint,
     required IconData icon,
+    required bool isDarkMode,
     Widget? suffixIcon,
   }) {
-    const Color olive = Color(0xFF808000);
-
     return InputDecoration(
       labelText: label,
       hintText: hint,
 
-      labelStyle: const TextStyle(
-        color: Colors.white70,
+      labelStyle: TextStyle(
+        color: isDarkMode
+            ? Colors.white70
+            : Colors.white70,
       ),
 
-      hintStyle: const TextStyle(
-        color: Colors.white54,
+      hintStyle: TextStyle(
+        color: isDarkMode
+            ? Colors.white38
+            : Colors.white54,
       ),
 
       prefixIcon: Icon(
         icon,
-        color: Colors.white70,
+        color: isDarkMode
+            ? Colors.white70
+            : Colors.white70,
       ),
 
       suffixIcon: suffixIcon,
 
       filled: true,
-      fillColor: Colors.white.withValues(alpha: 0.12),
+
+      fillColor: isDarkMode
+          ? Colors.black.withValues(alpha: 0.18)
+          : Colors.white.withValues(alpha: 0.12),
 
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(18),
         borderSide: BorderSide(
-          color: Colors.white.withValues(alpha: 0.20),
+          color: Colors.white.withValues(
+            alpha: isDarkMode ? 0.15 : 0.20,
+          ),
         ),
       ),
 
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(18),
         borderSide: BorderSide(
-          color: Colors.white.withValues(alpha: 0.20),
+          color: Colors.white.withValues(
+            alpha: isDarkMode ? 0.15 : 0.20,
+          ),
         ),
       ),
 
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(18),
         borderSide: const BorderSide(
-          color: olive,
+          color: oliveDrab,
           width: 2,
         ),
       ),
@@ -242,20 +273,27 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
   @override
   Widget build(BuildContext context) {
-    const Color olive = Color(0xFF808000);
-    const Color oliveDrab = Color(0xFF6B8E23);
-    const Color darkOlive = Color(0xFF3F4A16);
-    const Color lightCream = Color(0xFFF4F5E9);
+    final ThemeService themeService =
+    ThemeProvider.of(context);
+
+    final bool isDarkMode =
+        themeService.isDarkMode;
 
     return Scaffold(
       extendBodyBehindAppBar: true,
 
       body: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
+            colors: isDarkMode
+                ? const [
+              Color(0xFF252B17),
+              Color(0xFF3F4A16),
+              Color(0xFF1E2412),
+            ]
+                : const [
               darkOlive,
               oliveDrab,
               olive,
@@ -275,6 +313,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 ),
 
                 child: _buildGlassContainer(
+                  isDarkMode: isDarkMode,
+
                   padding: const EdgeInsets.fromLTRB(
                     28,
                     32,
@@ -285,27 +325,37 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-
                       // Persona icon
                       Container(
                         width: 86,
                         height: 86,
 
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(
+                          color: isDarkMode
+                              ? Colors.white.withValues(
+                            alpha: 0.08,
+                          )
+                              : Colors.white.withValues(
                             alpha: 0.18,
                           ),
+
                           shape: BoxShape.circle,
+
                           border: Border.all(
                             color: Colors.white.withValues(
-                              alpha: 0.35,
+                              alpha: isDarkMode
+                                  ? 0.18
+                                  : 0.35,
                             ),
                             width: 1.5,
                           ),
+
                           boxShadow: [
                             BoxShadow(
-                              color: darkOlive.withValues(
-                                alpha: 0.25,
+                              color: Colors.black.withValues(
+                                alpha: isDarkMode
+                                    ? 0.30
+                                    : 0.15,
                               ),
                               blurRadius: 20,
                               spreadRadius: 2,
@@ -360,6 +410,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           label: 'Full Name',
                           hint: 'Enter your name',
                           icon: Icons.person_outline,
+                          isDarkMode: isDarkMode,
                         ),
                       ),
 
@@ -380,6 +431,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           label: 'Email',
                           hint: 'Enter your email',
                           icon: Icons.email_outlined,
+                          isDarkMode: isDarkMode,
                         ),
                       ),
 
@@ -399,6 +451,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           label: 'Password',
                           hint: 'Create a password',
                           icon: Icons.lock_outline,
+                          isDarkMode: isDarkMode,
 
                           suffixIcon: IconButton(
                             onPressed: () {
@@ -411,8 +464,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             icon: Icon(
                               obscurePassword
                                   ? Icons.visibility_outlined
-                                  : Icons
-                                  .visibility_off_outlined,
+                                  : Icons.visibility_off_outlined,
                               color: Colors.white70,
                             ),
                           ),
@@ -438,6 +490,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           hint:
                           'Enter your password again',
                           icon: Icons.lock_outline,
+                          isDarkMode: isDarkMode,
 
                           suffixIcon: IconButton(
                             onPressed: () {
@@ -449,10 +502,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
                             icon: Icon(
                               obscureConfirmPassword
-                                  ? Icons
-                                  .visibility_outlined
-                                  : Icons
-                                  .visibility_off_outlined,
+                                  ? Icons.visibility_outlined
+                                  : Icons.visibility_off_outlined,
                               color: Colors.white70,
                             ),
                           ),
@@ -472,7 +523,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
                           style:
                           ElevatedButton.styleFrom(
-                            backgroundColor: Colors.white,
+                            backgroundColor: isDarkMode
+                                ? Colors.white
+                                : Colors.white,
+
                             foregroundColor: darkOlive,
 
                             disabledBackgroundColor:
@@ -553,6 +607,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
                       const Text(
                         'PERSONA',
+
                         style: TextStyle(
                           color: Colors.white54,
                           fontSize: 11,

@@ -3,6 +3,8 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+import '../services/theme_service.dart';
+
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
 
@@ -13,10 +15,40 @@ class ForgotPasswordScreen extends StatefulWidget {
 
 class _ForgotPasswordScreenState
     extends State<ForgotPasswordScreen> {
+  // ============================================================
+  // Persona Colors
+  // ============================================================
+
+  static const Color olive =
+  Color(0xFF808000);
+
+  static const Color oliveDrab =
+  Color(0xFF6B8E23);
+
+  static const Color darkOlive =
+  Color(0xFF3F4A16);
+
+  static const Color lightCream =
+  Color(0xFFF4F5E9);
+
+  static const Color darkBackground =
+  Color(0xFF1E2412);
+
+  static const Color darkCard =
+  Color(0xFF2B321B);
+
+  // ============================================================
+  // Controllers
+  // ============================================================
+
   final TextEditingController emailController =
   TextEditingController();
 
   bool isLoading = false;
+
+  // ============================================================
+  // DISPOSE
+  // ============================================================
 
   @override
   void dispose() {
@@ -24,9 +56,9 @@ class _ForgotPasswordScreenState
     super.dispose();
   }
 
-  // =========================
+  // ============================================================
   // SEND PASSWORD RESET
-  // =========================
+  // ============================================================
 
   Future<void> sendPasswordReset() async {
     if (isLoading) {
@@ -104,17 +136,27 @@ class _ForgotPasswordScreenState
     }
   }
 
-  // =========================
+  // ============================================================
   // MESSAGE
-  // =========================
+  // ============================================================
 
   void _showMessage(String message) {
+    final bool isDarkMode =
+        Theme.of(context).brightness ==
+            Brightness.dark;
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message),
+        content: Text(
+          message,
+          style: const TextStyle(
+            color: Colors.white,
+          ),
+        ),
         behavior: SnackBarBehavior.floating,
-        backgroundColor:
-        const Color(0xFF3F4A16),
+        backgroundColor: isDarkMode
+            ? darkCard
+            : darkOlive,
         shape: RoundedRectangleBorder(
           borderRadius:
           BorderRadius.circular(14),
@@ -123,12 +165,13 @@ class _ForgotPasswordScreenState
     );
   }
 
-  // =========================
+  // ============================================================
   // GLASS CONTAINER
-  // =========================
+  // ============================================================
 
   Widget _buildGlassContainer({
     required Widget child,
+    required bool isDarkMode,
     EdgeInsetsGeometry padding =
     const EdgeInsets.all(24),
   }) {
@@ -146,7 +189,11 @@ class _ForgotPasswordScreenState
           padding: padding,
 
           decoration: BoxDecoration(
-            color: Colors.white.withValues(
+            color: isDarkMode
+                ? Colors.black.withValues(
+              alpha: 0.20,
+            )
+                : Colors.white.withValues(
               alpha: 0.17,
             ),
 
@@ -155,11 +202,26 @@ class _ForgotPasswordScreenState
 
             border: Border.all(
               color: Colors.white.withValues(
-                alpha: 0.32,
+                alpha: isDarkMode
+                    ? 0.12
+                    : 0.32,
               ),
 
               width: 1.2,
             ),
+
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(
+                  alpha: isDarkMode
+                      ? 0.25
+                      : 0.12,
+                ),
+                blurRadius: 25,
+                offset:
+                const Offset(0, 10),
+              ),
+            ],
           ),
 
           child: child,
@@ -168,38 +230,94 @@ class _ForgotPasswordScreenState
     );
   }
 
-  // =========================
+  // ============================================================
   // BUILD
-  // =========================
+  // ============================================================
 
   @override
   Widget build(BuildContext context) {
-    const Color olive =
-    Color(0xFF808000);
+    final ThemeService themeService =
+    ThemeProvider.of(context);
 
-    const Color oliveDrab =
-    Color(0xFF6B8E23);
+    final bool isDarkMode =
+        themeService.isDarkMode;
 
-    const Color darkOlive =
-    Color(0xFF3F4A16);
+    final Color backgroundStart =
+    isDarkMode
+        ? const Color(0xFF3F4A16)
+        : darkOlive;
 
-    const Color lightCream =
-    Color(0xFFF4F5E9);
+    final Color backgroundMiddle =
+    isDarkMode
+        ? const Color(0xFF2B321B)
+        : oliveDrab;
+
+    final Color backgroundEnd =
+    isDarkMode
+        ? darkBackground
+        : lightCream;
+
+    final Color primaryText =
+    isDarkMode
+        ? Colors.white
+        : Colors.white;
+
+    final Color secondaryText =
+    isDarkMode
+        ? Colors.white.withValues(
+      alpha: 0.68,
+    )
+        : Colors.white70;
+
+    final Color fieldFill =
+    isDarkMode
+        ? Colors.black.withValues(
+      alpha: 0.20,
+    )
+        : Colors.white.withValues(
+      alpha: 0.12,
+    );
+
+    final Color fieldBorder =
+    isDarkMode
+        ? Colors.white.withValues(
+      alpha: 0.12,
+    )
+        : Colors.white.withValues(
+      alpha: 0.20,
+    );
+
+    final Color buttonBackground =
+    isDarkMode
+        ? oliveDrab
+        : Colors.white;
+
+    final Color buttonForeground =
+    isDarkMode
+        ? Colors.white
+        : darkOlive;
 
     return Scaffold(
       extendBodyBehindAppBar: true,
 
+      backgroundColor:
+      isDarkMode
+          ? darkBackground
+          : darkOlive,
+
       body: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
 
             colors: [
-              darkOlive,
-              oliveDrab,
-              olive,
-              lightCream,
+              backgroundStart,
+              backgroundMiddle,
+              isDarkMode
+                  ? const Color(0xFF1E2412)
+                  : olive,
+              backgroundEnd,
             ],
           ),
         ),
@@ -217,6 +335,8 @@ class _ForgotPasswordScreenState
                 ),
 
                 child: _buildGlassContainer(
+                  isDarkMode: isDarkMode,
+
                   padding:
                   const EdgeInsets.fromLTRB(
                     28,
@@ -230,10 +350,9 @@ class _ForgotPasswordScreenState
                     MainAxisSize.min,
 
                     children: [
-
-                      // =========================
+                      // =====================================================
                       // PERSONA ICON
-                      // =========================
+                      // =====================================================
 
                       Container(
                         width: 90,
@@ -241,17 +360,22 @@ class _ForgotPasswordScreenState
 
                         decoration:
                         BoxDecoration(
-                          shape: BoxShape.circle,
+                          shape:
+                          BoxShape.circle,
 
                           color: Colors.white
                               .withValues(
-                            alpha: 0.17,
+                            alpha: isDarkMode
+                                ? 0.08
+                                : 0.17,
                           ),
 
                           border: Border.all(
                             color: Colors.white
                                 .withValues(
-                              alpha: 0.35,
+                              alpha: isDarkMode
+                                  ? 0.16
+                                  : 0.35,
                             ),
 
                             width: 1.5,
@@ -270,7 +394,8 @@ class _ForgotPasswordScreenState
                           ],
                         ),
 
-                        child: const Icon(
+                        child:
+                        const Icon(
                           Icons.lock_reset,
                           size: 48,
                           color: Colors.white,
@@ -281,27 +406,29 @@ class _ForgotPasswordScreenState
                         height: 24,
                       ),
 
-                      // =========================
+                      // =====================================================
                       // TITLE
-                      // =========================
+                      // =====================================================
 
-                      const Text(
+                      Text(
                         'Reset Your Password',
 
                         textAlign:
                         TextAlign.center,
 
                         style: TextStyle(
-                          color: Colors.white,
+                          color: primaryText,
                           fontSize: 27,
                           fontWeight:
                           FontWeight.bold,
                         ),
                       ),
 
-                      const SizedBox(height: 9),
+                      const SizedBox(
+                        height: 9,
+                      ),
 
-                      const Text(
+                      Text(
                         'Enter your email address and '
                             'we will send you a link to '
                             'reset your password.',
@@ -310,7 +437,7 @@ class _ForgotPasswordScreenState
                         TextAlign.center,
 
                         style: TextStyle(
-                          color: Colors.white70,
+                          color: secondaryText,
                           fontSize: 15,
                           height: 1.4,
                         ),
@@ -320,9 +447,9 @@ class _ForgotPasswordScreenState
                         height: 28,
                       ),
 
-                      // =========================
+                      // =====================================================
                       // EMAIL FIELD
-                      // =========================
+                      // =====================================================
 
                       TextField(
                         controller:
@@ -339,19 +466,28 @@ class _ForgotPasswordScreenState
                         decoration:
                         InputDecoration(
                           labelText: 'Email',
+
                           hintText:
                           'Enter your email',
 
                           labelStyle:
-                          const TextStyle(
-                            color:
-                            Colors.white70,
+                          TextStyle(
+                            color: isDarkMode
+                                ? Colors.white
+                                .withValues(
+                              alpha: 0.68,
+                            )
+                                : Colors.white70,
                           ),
 
                           hintStyle:
-                          const TextStyle(
-                            color:
-                            Colors.white54,
+                          TextStyle(
+                            color: isDarkMode
+                                ? Colors.white
+                                .withValues(
+                              alpha: 0.42,
+                            )
+                                : Colors.white54,
                           ),
 
                           prefixIcon:
@@ -365,10 +501,7 @@ class _ForgotPasswordScreenState
                           filled: true,
 
                           fillColor:
-                          Colors.white
-                              .withValues(
-                            alpha: 0.12,
-                          ),
+                          fieldFill,
 
                           border:
                           OutlineInputBorder(
@@ -380,11 +513,8 @@ class _ForgotPasswordScreenState
 
                             borderSide:
                             BorderSide(
-                              color: Colors
-                                  .white
-                                  .withValues(
-                                alpha: 0.20,
-                              ),
+                              color:
+                              fieldBorder,
                             ),
                           ),
 
@@ -398,11 +528,8 @@ class _ForgotPasswordScreenState
 
                             borderSide:
                             BorderSide(
-                              color: Colors
-                                  .white
-                                  .withValues(
-                                alpha: 0.20,
-                              ),
+                              color:
+                              fieldBorder,
                             ),
                           ),
 
@@ -427,13 +554,14 @@ class _ForgotPasswordScreenState
                         height: 25,
                       ),
 
-                      // =========================
+                      // =====================================================
                       // SEND BUTTON
-                      // =========================
+                      // =====================================================
 
                       SizedBox(
                         width:
                         double.infinity,
+
                         height: 54,
 
                         child:
@@ -443,15 +571,24 @@ class _ForgotPasswordScreenState
                               ? null
                               : sendPasswordReset,
 
-                          style: ElevatedButton
+                          style:
+                          ElevatedButton
                               .styleFrom(
                             backgroundColor:
-                            Colors.white,
+                            buttonBackground,
 
                             foregroundColor:
-                            darkOlive,
+                            buttonForeground,
 
                             disabledBackgroundColor:
+                            isDarkMode
+                                ? oliveDrab
+                                .withValues(
+                              alpha: 0.45,
+                            )
+                                : Colors.white54,
+
+                            disabledForegroundColor:
                             Colors.white54,
 
                             elevation: 0,
@@ -467,7 +604,7 @@ class _ForgotPasswordScreenState
                           ),
 
                           child: isLoading
-                              ? const SizedBox(
+                              ? SizedBox(
                             width: 23,
                             height: 23,
 
@@ -477,7 +614,7 @@ class _ForgotPasswordScreenState
                               2.5,
 
                               color:
-                              darkOlive,
+                              buttonForeground,
                             ),
                           )
                               : Row(
@@ -517,9 +654,9 @@ class _ForgotPasswordScreenState
                         height: 18,
                       ),
 
-                      // =========================
+                      // =====================================================
                       // BACK TO LOGIN
-                      // =========================
+                      // =====================================================
 
                       TextButton(
                         onPressed: isLoading
@@ -530,11 +667,16 @@ class _ForgotPasswordScreenState
                           );
                         },
 
-                        child: const Text(
+                        child: Text(
                           'Back to Login',
 
                           style: TextStyle(
-                            color: Colors.white,
+                            color: Colors.white
+                                .withValues(
+                              alpha: isDarkMode
+                                  ? 0.88
+                                  : 1.0,
+                            ),
                             fontSize: 14,
                             fontWeight:
                             FontWeight.bold,
@@ -546,9 +688,9 @@ class _ForgotPasswordScreenState
                         height: 12,
                       ),
 
-                      // =========================
+                      // =====================================================
                       // SECURITY MESSAGE
-                      // =========================
+                      // =====================================================
 
                       Row(
                         mainAxisAlignment:
@@ -560,7 +702,9 @@ class _ForgotPasswordScreenState
                             Icons.lock_outline,
                             color: Colors.white
                                 .withValues(
-                              alpha: 0.55,
+                              alpha: isDarkMode
+                                  ? 0.48
+                                  : 0.55,
                             ),
                             size: 16,
                           ),
@@ -569,12 +713,16 @@ class _ForgotPasswordScreenState
                             width: 7,
                           ),
 
-                          const Text(
+                          Text(
                             'Your password remains secure',
 
                             style: TextStyle(
-                              color:
-                              Colors.white60,
+                              color: Colors.white
+                                  .withValues(
+                                alpha: isDarkMode
+                                    ? 0.48
+                                    : 0.60,
+                              ),
                               fontSize: 12,
                             ),
                           ),
@@ -585,11 +733,16 @@ class _ForgotPasswordScreenState
                         height: 22,
                       ),
 
-                      const Text(
+                      Text(
                         'PERSONA',
 
                         style: TextStyle(
-                          color: Colors.white54,
+                          color: Colors.white
+                              .withValues(
+                            alpha: isDarkMode
+                                ? 0.40
+                                : 0.54,
+                          ),
                           fontSize: 11,
                           fontWeight:
                           FontWeight.bold,

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:google_sign_in_all_platforms/google_sign_in_all_platforms.dart';
 
 import '../services/google_auth_service.dart';
+import '../services/theme_service.dart';
 import 'home_screen.dart';
 
 class GoogleSignInScreen extends StatefulWidget {
@@ -90,37 +91,34 @@ class _GoogleSignInScreenState
 
   Widget _buildGlassContainer({
     required Widget child,
+    required bool isDarkMode,
     EdgeInsetsGeometry padding =
     const EdgeInsets.all(24),
   }) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(30),
-
       child: BackdropFilter(
         filter: ImageFilter.blur(
           sigmaX: 18,
           sigmaY: 18,
         ),
-
         child: Container(
           padding: padding,
-
           decoration: BoxDecoration(
-            color: Colors.white.withValues(
-              alpha: 0.17,
-            ),
+            color: isDarkMode
+                ? Colors.black.withValues(alpha: 0.20)
+                : Colors.white.withValues(alpha: 0.17),
 
             borderRadius:
             BorderRadius.circular(30),
 
             border: Border.all(
               color: Colors.white.withValues(
-                alpha: 0.32,
+                alpha: isDarkMode ? 0.20 : 0.32,
               ),
               width: 1.2,
             ),
           ),
-
           child: child,
         ),
       ),
@@ -141,21 +139,76 @@ class _GoogleSignInScreenState
     const Color lightCream =
     Color(0xFFF4F5E9);
 
+    const Color darkBackground =
+    Color(0xFF1E2412);
+
+    const Color darkCard =
+    Color(0xFF2B321B);
+
+    // =========================
+    // THEME
+    // =========================
+
+    final ThemeService themeService =
+    ThemeProvider.of(context);
+
+    final bool isDarkMode =
+        themeService.isDarkMode;
+
+    // =========================
+    // THEME COLORS
+    // =========================
+
+    final List<Color> backgroundGradient =
+    isDarkMode
+        ? const [
+      darkOlive,
+      darkCard,
+      darkBackground,
+    ]
+        : const [
+      darkOlive,
+      oliveDrab,
+      olive,
+      lightCream,
+    ];
+
+    final Color glassColor = isDarkMode
+        ? Colors.black.withValues(alpha: 0.20)
+        : Colors.white.withValues(alpha: 0.17);
+
+    final Color glassBorderColor = Colors.white
+        .withValues(
+      alpha: isDarkMode ? 0.20 : 0.32,
+    );
+
+    final Color primaryText =
+        Colors.white;
+
+    final Color secondaryText =
+    Colors.white.withValues(
+      alpha: 0.70,
+    );
+
+    final Color subtleText =
+    Colors.white.withValues(
+      alpha: 0.60,
+    );
+
+    final Color verySubtleText =
+    Colors.white.withValues(
+      alpha: 0.54,
+    );
+
     return Scaffold(
       extendBodyBehindAppBar: true,
 
       body: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-
-            colors: [
-              darkOlive,
-              oliveDrab,
-              olive,
-              lightCream,
-            ],
+            colors: backgroundGradient,
           ),
         ),
 
@@ -170,6 +223,8 @@ class _GoogleSignInScreenState
                 ),
 
                 child: _buildGlassContainer(
+                  isDarkMode: isDarkMode,
+
                   padding:
                   const EdgeInsets.fromLTRB(
                     28,
@@ -179,7 +234,8 @@ class _GoogleSignInScreenState
                   ),
 
                   child: Column(
-                    mainAxisSize: MainAxisSize.min,
+                    mainAxisSize:
+                    MainAxisSize.min,
 
                     children: [
 
@@ -191,28 +247,34 @@ class _GoogleSignInScreenState
                         width: 90,
                         height: 90,
 
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
+                        decoration:
+                        BoxDecoration(
+                          shape:
+                          BoxShape.circle,
 
-                          color:
-                          Colors.white.withValues(
-                            alpha: 0.17,
-                          ),
+                          color: glassColor,
 
-                          border: Border.all(
+                          border:
+                          Border.all(
                             color:
-                            Colors.white.withValues(
-                              alpha: 0.35,
+                            Colors.white
+                                .withValues(
+                              alpha: isDarkMode
+                                  ? 0.25
+                                  : 0.35,
                             ),
-
                             width: 1.5,
                           ),
 
                           boxShadow: [
                             BoxShadow(
                               color:
-                              darkOlive.withValues(
-                                alpha: 0.25,
+                              darkOlive
+                                  .withValues(
+                                alpha:
+                                isDarkMode
+                                    ? 0.40
+                                    : 0.25,
                               ),
                               blurRadius: 20,
                               spreadRadius: 2,
@@ -227,29 +289,33 @@ class _GoogleSignInScreenState
                         ),
                       ),
 
-                      const SizedBox(height: 24),
+                      const SizedBox(
+                        height: 24,
+                      ),
 
                       // =========================
                       // TITLE
                       // =========================
 
-                      const Text(
+                      Text(
                         'Google Account',
 
                         textAlign:
                         TextAlign.center,
 
                         style: TextStyle(
-                          color: Colors.white,
+                          color: primaryText,
                           fontSize: 28,
                           fontWeight:
                           FontWeight.bold,
                         ),
                       ),
 
-                      const SizedBox(height: 8),
+                      const SizedBox(
+                        height: 8,
+                      ),
 
-                      const Text(
+                      Text(
                         'Connect your Google account '
                             'to continue using Persona.',
 
@@ -257,21 +323,28 @@ class _GoogleSignInScreenState
                         TextAlign.center,
 
                         style: TextStyle(
-                          color: Colors.white70,
+                          color: secondaryText,
                           fontSize: 15,
                           height: 1.4,
                         ),
                       ),
 
-                      const SizedBox(height: 30),
+                      const SizedBox(
+                        height: 30,
+                      ),
 
                       // =========================
                       // GOOGLE INFORMATION CARD
                       // =========================
 
                       _buildGlassContainer(
+                        isDarkMode:
+                        isDarkMode,
+
                         padding:
-                        const EdgeInsets.all(18),
+                        const EdgeInsets.all(
+                          18,
+                        ),
 
                         child: Row(
                           children: [
@@ -282,22 +355,32 @@ class _GoogleSignInScreenState
 
                               decoration:
                               BoxDecoration(
-                                color: Colors.white,
+                                color:
+                                Colors.white,
+
                                 borderRadius:
                                 BorderRadius
-                                    .circular(15),
+                                    .circular(
+                                  15,
+                                ),
                               ),
 
-                              child: const Center(
+                              child:
+                              const Center(
                                 child: Text(
                                   'G',
 
-                                  style: TextStyle(
-                                    fontSize: 25,
+                                  style:
+                                  TextStyle(
+                                    fontSize:
+                                    25,
                                     fontWeight:
-                                    FontWeight.bold,
+                                    FontWeight
+                                        .bold,
                                     color:
-                                    Color(0xFF4285F4),
+                                    Color(
+                                      0xFF4285F4,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -307,34 +390,40 @@ class _GoogleSignInScreenState
                               width: 14,
                             ),
 
-                            const Expanded(
+                            Expanded(
                               child: Column(
                                 crossAxisAlignment:
                                 CrossAxisAlignment
                                     .start,
 
                                 children: [
+
                                   Text(
                                     'Google Sign-In',
 
-                                    style: TextStyle(
+                                    style:
+                                    TextStyle(
                                       color:
-                                      Colors.white,
+                                      primaryText,
                                       fontSize: 16,
                                       fontWeight:
-                                      FontWeight.bold,
+                                      FontWeight
+                                          .bold,
                                     ),
                                   ),
 
-                                  SizedBox(height: 4),
+                                  const SizedBox(
+                                    height: 4,
+                                  ),
 
                                   Text(
                                     'Securely authenticate '
                                         'with Google.',
 
-                                    style: TextStyle(
+                                    style:
+                                    TextStyle(
                                       color:
-                                      Colors.white60,
+                                      subtleText,
                                       fontSize: 12,
                                     ),
                                   ),
@@ -345,17 +434,21 @@ class _GoogleSignInScreenState
                         ),
                       ),
 
-                      const SizedBox(height: 28),
+                      const SizedBox(
+                        height: 28,
+                      ),
 
                       // =========================
                       // SIGN IN BUTTON
                       // =========================
 
                       SizedBox(
-                        width: double.infinity,
+                        width:
+                        double.infinity,
                         height: 54,
 
-                        child: ElevatedButton(
+                        child:
+                        ElevatedButton(
                           onPressed:
                           isLoading
                               ? null
@@ -378,7 +471,9 @@ class _GoogleSignInScreenState
                             RoundedRectangleBorder(
                               borderRadius:
                               BorderRadius
-                                  .circular(18),
+                                  .circular(
+                                18,
+                              ),
                             ),
                           ),
 
@@ -389,7 +484,8 @@ class _GoogleSignInScreenState
 
                             child:
                             CircularProgressIndicator(
-                              strokeWidth: 2.5,
+                              strokeWidth:
+                              2.5,
                               color:
                               darkOlive,
                             ),
@@ -400,6 +496,7 @@ class _GoogleSignInScreenState
                                 .center,
 
                             children: [
+
                               Container(
                                 width: 26,
                                 height: 26,
@@ -407,8 +504,10 @@ class _GoogleSignInScreenState
                                 decoration:
                                 BoxDecoration(
                                   color:
-                                  Colors.grey
+                                  Colors
+                                      .grey
                                       .shade100,
+
                                   borderRadius:
                                   BorderRadius
                                       .circular(
@@ -418,12 +517,14 @@ class _GoogleSignInScreenState
 
                                 child:
                                 const Center(
-                                  child: Text(
+                                  child:
+                                  Text(
                                     'G',
 
                                     style:
                                     TextStyle(
-                                      fontSize: 17,
+                                      fontSize:
+                                      17,
                                       fontWeight:
                                       FontWeight
                                           .bold,
@@ -443,8 +544,10 @@ class _GoogleSignInScreenState
                               const Text(
                                 'Sign in with Google',
 
-                                style: TextStyle(
-                                  fontSize: 16,
+                                style:
+                                TextStyle(
+                                  fontSize:
+                                  16,
                                   fontWeight:
                                   FontWeight
                                       .bold,
@@ -455,7 +558,9 @@ class _GoogleSignInScreenState
                         ),
                       ),
 
-                      const SizedBox(height: 22),
+                      const SizedBox(
+                        height: 22,
+                      ),
 
                       // =========================
                       // SECURITY MESSAGE
@@ -463,12 +568,15 @@ class _GoogleSignInScreenState
 
                       Row(
                         mainAxisAlignment:
-                        MainAxisAlignment.center,
+                        MainAxisAlignment
+                            .center,
 
                         children: [
+
                           Icon(
                             Icons.lock_outline,
-                            color: Colors.white
+                            color:
+                            Colors.white
                                 .withValues(
                               alpha: 0.55,
                             ),
@@ -479,28 +587,32 @@ class _GoogleSignInScreenState
                             width: 7,
                           ),
 
-                          const Text(
+                          Text(
                             'Secure Google authentication',
 
                             style: TextStyle(
-                              color: Colors.white60,
+                              color:
+                              subtleText,
                               fontSize: 12,
                             ),
                           ),
                         ],
                       ),
 
-                      const SizedBox(height: 25),
+                      const SizedBox(
+                        height: 25,
+                      ),
 
                       // =========================
                       // PERSONA BRANDING
                       // =========================
 
-                      const Text(
+                      Text(
                         'PERSONA',
 
                         style: TextStyle(
-                          color: Colors.white54,
+                          color:
+                          verySubtleText,
                           fontSize: 11,
                           fontWeight:
                           FontWeight.bold,

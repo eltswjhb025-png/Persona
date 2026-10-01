@@ -4,6 +4,8 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 
+import '../services/theme_service.dart';
+
 class LocatorScreen extends StatefulWidget {
   const LocatorScreen({super.key});
 
@@ -26,6 +28,9 @@ class _LocatorScreenState extends State<LocatorScreen> {
   static const Color olive = Color(0xFF808000);
   static const Color darkOlive = Color(0xFF3F4A16);
   static const Color lightCream = Color(0xFFF4F5E9);
+
+  static const Color darkBackground = Color(0xFF1E2412);
+  static const Color darkCard = Color(0xFF2B321B);
 
   @override
   void initState() {
@@ -188,17 +193,20 @@ class _LocatorScreenState extends State<LocatorScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final ThemeService themeService =
+    ThemeProvider.of(context);
+
     final bool isDarkMode =
-        Theme.of(context).brightness == Brightness.dark;
+        themeService.isDarkMode;
 
     return Scaffold(
       extendBodyBehindAppBar: true,
 
       backgroundColor: isDarkMode
-          ? const Color(0xFF202414)
+          ? darkBackground
           : lightCream,
 
-      appBar: _buildAppBar(),
+      appBar: _buildAppBar(isDarkMode),
 
       body: Container(
         decoration: BoxDecoration(
@@ -207,9 +215,9 @@ class _LocatorScreenState extends State<LocatorScreen> {
             end: Alignment.bottomRight,
             colors: isDarkMode
                 ? const [
-              Color(0xFF202414),
+              Color(0xFF252B17),
               Color(0xFF3F4A16),
-              Color(0xFF151810),
+              Color(0xFF1E2412),
             ]
                 : const [
               Color(0xFF808000),
@@ -218,35 +226,32 @@ class _LocatorScreenState extends State<LocatorScreen> {
             ],
           ),
         ),
-
         child: SafeArea(
           child: ListView(
             physics:
             const BouncingScrollPhysics(),
-
             padding: const EdgeInsets.fromLTRB(
               20,
               20,
               20,
               30,
             ),
-
             children: [
               _buildLocationHeader(),
 
               const SizedBox(height: 20),
 
-              _buildStatusCard(),
+              _buildStatusCard(isDarkMode),
 
               const SizedBox(height: 20),
 
               if (currentPosition != null)
-                _buildCurrentLocationCard(),
+                _buildCurrentLocationCard(isDarkMode),
 
               if (currentPosition != null)
                 const SizedBox(height: 20),
 
-              _buildUpdateButton(),
+              _buildUpdateButton(isDarkMode),
 
               const SizedBox(height: 10),
 
@@ -259,13 +264,14 @@ class _LocatorScreenState extends State<LocatorScreen> {
               const SizedBox(height: 12),
 
               if (locationHistory.isEmpty)
-                _buildEmptyHistory()
+                _buildEmptyHistory(isDarkMode)
               else
                 ...locationHistory.asMap().entries.map(
                       (entry) {
                     return _buildHistoryCard(
                       entry.value,
                       entry.key,
+                      isDarkMode,
                     );
                   },
                 ),
@@ -280,7 +286,9 @@ class _LocatorScreenState extends State<LocatorScreen> {
   // APP BAR
   // ===========================================================
 
-  PreferredSizeWidget _buildAppBar() {
+  PreferredSizeWidget _buildAppBar(
+      bool isDarkMode,
+      ) {
     return AppBar(
       backgroundColor: Colors.transparent,
       elevation: 0,
@@ -292,13 +300,16 @@ class _LocatorScreenState extends State<LocatorScreen> {
             width: 42,
 
             decoration: BoxDecoration(
-              color:
-              Colors.white.withValues(alpha: 0.15),
+              color: Colors.white.withValues(
+                alpha: isDarkMode ? 0.10 : 0.15,
+              ),
+
               shape: BoxShape.circle,
 
               border: Border.all(
-                color:
-                Colors.white.withValues(alpha: 0.25),
+                color: Colors.white.withValues(
+                  alpha: isDarkMode ? 0.16 : 0.25,
+                ),
               ),
             ),
 
@@ -349,8 +360,9 @@ class _LocatorScreenState extends State<LocatorScreen> {
         Text(
           'Keep track of your current position.',
           style: TextStyle(
-            color:
-            Colors.white.withValues(alpha: 0.72),
+            color: Colors.white.withValues(
+              alpha: 0.72,
+            ),
             fontSize: 15,
           ),
         ),
@@ -362,8 +374,10 @@ class _LocatorScreenState extends State<LocatorScreen> {
   // STATUS CARD
   // ===========================================================
 
-  Widget _buildStatusCard() {
+  Widget _buildStatusCard(bool isDarkMode) {
     return _buildGlassContainer(
+      isDarkMode: isDarkMode,
+
       child: Row(
         children: [
           Container(
@@ -371,8 +385,9 @@ class _LocatorScreenState extends State<LocatorScreen> {
             width: 58,
 
             decoration: BoxDecoration(
-              color:
-              Colors.white.withValues(alpha: 0.90),
+              color: Colors.white.withValues(
+                alpha: isDarkMode ? 0.16 : 0.90,
+              ),
               borderRadius:
               BorderRadius.circular(18),
             ),
@@ -381,7 +396,9 @@ class _LocatorScreenState extends State<LocatorScreen> {
               isLoading
                   ? Icons.location_searching
                   : Icons.location_on,
-              color: oliveDrab,
+              color: isDarkMode
+                  ? Colors.white
+                  : oliveDrab,
               size: 30,
             ),
           ),
@@ -408,8 +425,9 @@ class _LocatorScreenState extends State<LocatorScreen> {
                 Text(
                   locationMessage,
                   style: TextStyle(
-                    color: Colors.white
-                        .withValues(alpha: 0.70),
+                    color: Colors.white.withValues(
+                      alpha: 0.70,
+                    ),
                     fontSize: 13,
                     height: 1.3,
                   ),
@@ -422,7 +440,6 @@ class _LocatorScreenState extends State<LocatorScreen> {
             const SizedBox(
               height: 22,
               width: 22,
-
               child: CircularProgressIndicator(
                 color: Colors.white,
                 strokeWidth: 2.5,
@@ -437,11 +454,14 @@ class _LocatorScreenState extends State<LocatorScreen> {
   // CURRENT LOCATION CARD
   // ===========================================================
 
-  Widget _buildCurrentLocationCard() {
+  Widget _buildCurrentLocationCard(
+      bool isDarkMode,
+      ) {
     final Position position =
     currentPosition!;
 
     return _buildGlassContainer(
+      isDarkMode: isDarkMode,
       padding: const EdgeInsets.all(20),
 
       child: Column(
@@ -477,6 +497,7 @@ class _LocatorScreenState extends State<LocatorScreen> {
             title: 'Latitude',
             value:
             position.latitude.toStringAsFixed(6),
+            isDarkMode: isDarkMode,
           ),
 
           const SizedBox(height: 14),
@@ -486,6 +507,7 @@ class _LocatorScreenState extends State<LocatorScreen> {
             title: 'Longitude',
             value:
             position.longitude.toStringAsFixed(6),
+            isDarkMode: isDarkMode,
           ),
 
           const SizedBox(height: 14),
@@ -495,6 +517,7 @@ class _LocatorScreenState extends State<LocatorScreen> {
             title: 'Accuracy',
             value:
             '${position.accuracy.toStringAsFixed(1)} m',
+            isDarkMode: isDarkMode,
           ),
 
           const SizedBox(height: 14),
@@ -505,6 +528,7 @@ class _LocatorScreenState extends State<LocatorScreen> {
             value: _formatTime(
               _getLocalTimestamp(position),
             ),
+            isDarkMode: isDarkMode,
           ),
         ],
       ),
@@ -519,6 +543,7 @@ class _LocatorScreenState extends State<LocatorScreen> {
     required IconData icon,
     required String title,
     required String value,
+    required bool isDarkMode,
   }) {
     return Container(
       padding: const EdgeInsets.symmetric(
@@ -527,14 +552,17 @@ class _LocatorScreenState extends State<LocatorScreen> {
       ),
 
       decoration: BoxDecoration(
-        color:
-        Colors.white.withValues(alpha: 0.08),
+        color: Colors.white.withValues(
+          alpha: isDarkMode ? 0.05 : 0.08,
+        ),
+
         borderRadius:
         BorderRadius.circular(15),
 
         border: Border.all(
-          color:
-          Colors.white.withValues(alpha: 0.10),
+          color: Colors.white.withValues(
+            alpha: isDarkMode ? 0.08 : 0.10,
+          ),
         ),
       ),
 
@@ -545,8 +573,9 @@ class _LocatorScreenState extends State<LocatorScreen> {
             width: 36,
 
             decoration: BoxDecoration(
-              color:
-              Colors.white.withValues(alpha: 0.12),
+              color: Colors.white.withValues(
+                alpha: isDarkMode ? 0.08 : 0.12,
+              ),
               shape: BoxShape.circle,
             ),
 
@@ -562,8 +591,9 @@ class _LocatorScreenState extends State<LocatorScreen> {
           Text(
             title,
             style: TextStyle(
-              color:
-              Colors.white.withValues(alpha: 0.65),
+              color: Colors.white.withValues(
+                alpha: 0.65,
+              ),
               fontSize: 13,
             ),
           ),
@@ -587,7 +617,7 @@ class _LocatorScreenState extends State<LocatorScreen> {
   // UPDATE BUTTON
   // ===========================================================
 
-  Widget _buildUpdateButton() {
+  Widget _buildUpdateButton(bool isDarkMode) {
     return SizedBox(
       width: double.infinity,
       height: 54,
@@ -610,10 +640,16 @@ class _LocatorScreenState extends State<LocatorScreen> {
 
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.white,
+
           foregroundColor: darkOlive,
 
           disabledBackgroundColor:
-          Colors.white.withValues(alpha: 0.55),
+          Colors.white.withValues(
+            alpha: isDarkMode ? 0.30 : 0.55,
+          ),
+
+          disabledForegroundColor:
+          darkOlive.withValues(alpha: 0.55),
 
           elevation: 0,
 
@@ -643,8 +679,9 @@ class _LocatorScreenState extends State<LocatorScreen> {
       children: [
         Icon(
           Icons.sync,
-          color:
-          Colors.white.withValues(alpha: 0.55),
+          color: Colors.white.withValues(
+            alpha: 0.55,
+          ),
           size: 15,
         ),
 
@@ -655,8 +692,9 @@ class _LocatorScreenState extends State<LocatorScreen> {
           textAlign: TextAlign.center,
 
           style: TextStyle(
-            color:
-            Colors.white.withValues(alpha: 0.60),
+            color: Colors.white.withValues(
+              alpha: 0.60,
+            ),
             fontSize: 12,
           ),
         ),
@@ -715,8 +753,11 @@ class _LocatorScreenState extends State<LocatorScreen> {
   // EMPTY HISTORY
   // ===========================================================
 
-  Widget _buildEmptyHistory() {
+  Widget _buildEmptyHistory(
+      bool isDarkMode,
+      ) {
     return _buildGlassContainer(
+      isDarkMode: isDarkMode,
       padding: const EdgeInsets.all(25),
 
       child: Column(
@@ -726,15 +767,17 @@ class _LocatorScreenState extends State<LocatorScreen> {
             width: 58,
 
             decoration: BoxDecoration(
-              color:
-              Colors.white.withValues(alpha: 0.10),
+              color: Colors.white.withValues(
+                alpha: isDarkMode ? 0.07 : 0.10,
+              ),
               shape: BoxShape.circle,
             ),
 
             child: Icon(
               Icons.location_searching,
-              color:
-              Colors.white.withValues(alpha: 0.60),
+              color: Colors.white.withValues(
+                alpha: 0.60,
+              ),
               size: 29,
             ),
           ),
@@ -746,8 +789,9 @@ class _LocatorScreenState extends State<LocatorScreen> {
             textAlign: TextAlign.center,
 
             style: TextStyle(
-              color:
-              Colors.white.withValues(alpha: 0.68),
+              color: Colors.white.withValues(
+                alpha: 0.68,
+              ),
               fontSize: 14,
             ),
           ),
@@ -759,8 +803,9 @@ class _LocatorScreenState extends State<LocatorScreen> {
             textAlign: TextAlign.center,
 
             style: TextStyle(
-              color:
-              Colors.white.withValues(alpha: 0.45),
+              color: Colors.white.withValues(
+                alpha: 0.45,
+              ),
               fontSize: 12,
             ),
           ),
@@ -776,6 +821,7 @@ class _LocatorScreenState extends State<LocatorScreen> {
   Widget _buildHistoryCard(
       Position position,
       int index,
+      bool isDarkMode,
       ) {
     final DateTime timestamp =
     _getLocalTimestamp(position);
@@ -791,6 +837,7 @@ class _LocatorScreenState extends State<LocatorScreen> {
       const EdgeInsets.only(bottom: 12),
 
       child: _buildGlassContainer(
+        isDarkMode: isDarkMode,
         padding: const EdgeInsets.all(16),
 
         child: Column(
@@ -805,8 +852,9 @@ class _LocatorScreenState extends State<LocatorScreen> {
                   width: 40,
 
                   decoration: BoxDecoration(
-                    color: Colors.white
-                        .withValues(alpha: 0.12),
+                    color: Colors.white.withValues(
+                      alpha: isDarkMode ? 0.07 : 0.12,
+                    ),
                     shape: BoxShape.circle,
                   ),
 
@@ -840,8 +888,9 @@ class _LocatorScreenState extends State<LocatorScreen> {
                       Text(
                         date,
                         style: TextStyle(
-                          color: Colors.white
-                              .withValues(alpha: 0.55),
+                          color: Colors.white.withValues(
+                            alpha: 0.55,
+                          ),
                           fontSize: 12,
                         ),
                       ),
@@ -852,8 +901,9 @@ class _LocatorScreenState extends State<LocatorScreen> {
                 Text(
                   '#${index + 1}',
                   style: TextStyle(
-                    color: Colors.white
-                        .withValues(alpha: 0.35),
+                    color: Colors.white.withValues(
+                      alpha: 0.35,
+                    ),
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
                   ),
@@ -902,8 +952,9 @@ class _LocatorScreenState extends State<LocatorScreen> {
         Text(
           '$label:',
           style: TextStyle(
-            color:
-            Colors.white.withValues(alpha: 0.55),
+            color: Colors.white.withValues(
+              alpha: 0.55,
+            ),
             fontSize: 13,
           ),
         ),
@@ -928,6 +979,7 @@ class _LocatorScreenState extends State<LocatorScreen> {
 
   Widget _buildGlassContainer({
     required Widget child,
+    required bool isDarkMode,
     EdgeInsetsGeometry padding =
     const EdgeInsets.all(17),
   }) {
@@ -945,22 +997,25 @@ class _LocatorScreenState extends State<LocatorScreen> {
           padding: padding,
 
           decoration: BoxDecoration(
-            color: Colors.white
-                .withValues(alpha: 0.14),
+            color: Colors.white.withValues(
+              alpha: isDarkMode ? 0.07 : 0.14,
+            ),
 
             borderRadius:
             BorderRadius.circular(24),
 
             border: Border.all(
-              color: Colors.white
-                  .withValues(alpha: 0.20),
+              color: Colors.white.withValues(
+                alpha: isDarkMode ? 0.12 : 0.20,
+              ),
               width: 1,
             ),
 
             boxShadow: [
               BoxShadow(
-                color: Colors.black
-                    .withValues(alpha: 0.10),
+                color: Colors.black.withValues(
+                  alpha: isDarkMode ? 0.22 : 0.10,
+                ),
                 blurRadius: 20,
                 offset:
                 const Offset(0, 8),

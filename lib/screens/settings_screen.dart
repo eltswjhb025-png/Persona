@@ -22,6 +22,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   static const Color oliveDrab = Color(0xFF6B8E23);
   static const Color darkOlive = Color(0xFF3F4A16);
   static const Color lightCream = Color(0xFFF4F5E9);
+  static const Color darkBackground = Color(0xFF1E2412);
+  static const Color darkCard = Color(0xFF2B321B);
 
   // ============================================================
   // Helpers
@@ -30,6 +32,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget glassCard({
     required Widget child,
     EdgeInsetsGeometry padding = const EdgeInsets.all(18),
+    required bool isDarkMode,
   }) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(22),
@@ -41,10 +44,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
         child: Container(
           padding: padding,
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.15),
+            color: isDarkMode
+                ? Colors.black.withValues(alpha: 0.25)
+                : Colors.white.withValues(alpha: 0.15),
             borderRadius: BorderRadius.circular(22),
             border: Border.all(
-              color: Colors.white.withValues(alpha: 0.25),
+              color: isDarkMode
+                  ? Colors.white.withValues(alpha: 0.15)
+                  : Colors.white.withValues(alpha: 0.25),
             ),
           ),
           child: child,
@@ -58,11 +65,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
     required String title,
     required String subtitle,
     required VoidCallback onTap,
+    required bool isDarkMode,
     bool showArrow = true,
     Widget? trailing,
   }) {
     return glassCard(
       padding: EdgeInsets.zero,
+      isDarkMode: isDarkMode,
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 18,
@@ -72,10 +81,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
           width: 46,
           height: 46,
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.18),
+            color: isDarkMode
+                ? oliveDrab.withValues(alpha: 0.25)
+                : Colors.white.withValues(alpha: 0.18),
             shape: BoxShape.circle,
             border: Border.all(
-              color: Colors.white.withValues(alpha: 0.25),
+              color: isDarkMode
+                  ? oliveDrab.withValues(alpha: 0.45)
+                  : Colors.white.withValues(alpha: 0.25),
             ),
           ),
           child: Icon(
@@ -122,22 +135,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final bool? shouldLogout = await showDialog<bool>(
       context: context,
       builder: (context) {
+        final bool isDarkMode =
+            Theme.of(context).brightness == Brightness.dark;
+
         return AlertDialog(
-          backgroundColor: lightCream,
+          backgroundColor: isDarkMode ? darkCard : lightCream,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(22),
           ),
-          title: const Text(
+          title: Text(
             'Logout',
             style: TextStyle(
-              color: darkOlive,
+              color: isDarkMode ? Colors.white : darkOlive,
               fontWeight: FontWeight.bold,
             ),
           ),
-          content: const Text(
+          content: Text(
             'Are you sure you want to logout of Persona?',
             style: TextStyle(
-              color: Colors.black87,
+              color: isDarkMode ? Colors.white70 : Colors.black87,
             ),
           ),
           actions: [
@@ -155,7 +171,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: darkOlive,
+                backgroundColor: isDarkMode ? oliveDrab : darkOlive,
                 foregroundColor: Colors.white,
               ),
               onPressed: () {
@@ -191,15 +207,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
     showDialog(
       context: context,
       builder: (context) {
+        final bool isDarkMode =
+            Theme.of(context).brightness == Brightness.dark;
+
         return AlertDialog(
-          backgroundColor: lightCream,
+          backgroundColor: isDarkMode ? darkCard : lightCream,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(22),
           ),
-          title: const Text(
+          title: Text(
             'Profile',
             style: TextStyle(
-              color: darkOlive,
+              color: isDarkMode ? Colors.white : darkOlive,
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -215,8 +234,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
               const SizedBox(height: 15),
               Text(
                 user?.displayName ?? 'Persona User',
-                style: const TextStyle(
-                  color: darkOlive,
+                style: TextStyle(
+                  color: isDarkMode ? Colors.white : darkOlive,
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                 ),
@@ -225,7 +244,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
               Text(
                 user?.email ?? 'No email available',
                 style: TextStyle(
-                  color: Colors.black.withValues(alpha: 0.65),
+                  color: isDarkMode
+                      ? Colors.white.withValues(alpha: 0.65)
+                      : Colors.black.withValues(alpha: 0.65),
                 ),
               ),
             ],
@@ -257,22 +278,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
     showDialog(
       context: context,
       builder: (context) {
+        final bool isDarkMode =
+            Theme.of(context).brightness == Brightness.dark;
+
         return AlertDialog(
-          backgroundColor: lightCream,
+          backgroundColor: isDarkMode ? darkCard : lightCream,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(22),
           ),
-          title: const Text(
+          title: Text(
             'Notifications & Reminders',
             style: TextStyle(
-              color: darkOlive,
+              color: isDarkMode ? Colors.white : darkOlive,
               fontWeight: FontWeight.bold,
             ),
           ),
-          content: const Text(
+          content: Text(
             'Persona notifications and birthday reminders are managed by the app notification system.',
             style: TextStyle(
-              color: Colors.black87,
+              color: isDarkMode ? Colors.white70 : Colors.black87,
             ),
           ),
           actions: [
@@ -309,10 +333,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
         size: 45,
       ),
       applicationLegalese: '© 2026 Persona',
-      children: const [
-        SizedBox(height: 20),
+      children: [
+        const SizedBox(height: 20),
         Text(
           'Persona brings your important people, birthdays, calendar events, location and emergency tools together in one place.',
+          style: TextStyle(
+            color: Theme.of(context).brightness == Brightness.dark
+                ? Colors.white70
+                : Colors.black87,
+          ),
         ),
       ],
     );
@@ -328,6 +357,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     //
     // ThemeProvider listens to ThemeService and rebuilds this
     // screen whenever notifyListeners() is called.
+
     final ThemeService themeService =
     ThemeProvider.of(context);
 
@@ -337,11 +367,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
       extendBodyBehindAppBar: true,
 
       body: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
+            colors: isDarkMode
+                ? const [
+              Color(0xFF1E2412),
+              Color(0xFF2B321B),
+              Color(0xFF11150B),
+            ]
+                : const [
               oliveDrab,
               olive,
               darkOlive,
@@ -376,10 +412,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         vertical: 8,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.14),
+                        color: isDarkMode
+                            ? Colors.black.withValues(alpha: 0.25)
+                            : Colors.white.withValues(alpha: 0.14),
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.22),
+                          color: isDarkMode
+                              ? Colors.white.withValues(alpha: 0.15)
+                              : Colors.white.withValues(alpha: 0.22),
                         ),
                       ),
                       child: Row(
@@ -435,20 +475,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       // ==================================================
 
                       glassCard(
+                        isDarkMode: isDarkMode,
                         child: Row(
                           children: [
                             Container(
                               width: 64,
                               height: 64,
                               decoration: BoxDecoration(
-                                color: Colors.white.withValues(
-                                  alpha: 0.18,
-                                ),
+                                color: isDarkMode
+                                    ? oliveDrab.withValues(alpha: 0.25)
+                                    : Colors.white.withValues(alpha: 0.18),
                                 shape: BoxShape.circle,
                                 border: Border.all(
-                                  color: Colors.white.withValues(
-                                    alpha: 0.28,
-                                  ),
+                                  color: isDarkMode
+                                      ? oliveDrab.withValues(alpha: 0.45)
+                                      : Colors.white.withValues(alpha: 0.28),
                                 ),
                               ),
                               child: const Icon(
@@ -512,6 +553,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         title: 'Profile',
                         subtitle:
                         'View your Persona account information',
+                        isDarkMode: isDarkMode,
                         onTap: _openProfile,
                       ),
 
@@ -546,11 +588,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         subtitle: isDarkMode
                             ? 'Dark theme is enabled'
                             : 'Use Persona in light mode',
+                        isDarkMode: isDarkMode,
                         showArrow: false,
                         trailing: Switch(
                           value: isDarkMode,
-                          activeThumbColor: darkOlive,
-                          activeTrackColor: Colors.white,
+                          activeThumbColor: Colors.white,
+                          activeTrackColor: oliveDrab,
                           inactiveThumbColor: Colors.white,
                           inactiveTrackColor:
                           Colors.white.withValues(alpha: 0.35),
@@ -572,6 +615,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         title: 'Notifications & Reminders',
                         subtitle:
                         'Manage birthday and app reminders',
+                        isDarkMode: isDarkMode,
                         onTap: _openNotificationSettings,
                       ),
 
@@ -601,12 +645,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         title: 'Emergency Contact',
                         subtitle:
                         'Set the person who will receive SOS messages',
+                        isDarkMode: isDarkMode,
                         onTap: () {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
                               builder: (context) =>
-                              const EmergencyContactsScreen() ,
+                              const EmergencyContactsScreen(),
                             ),
                           );
                         },
@@ -638,6 +683,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         title: 'About Persona',
                         subtitle:
                         'App information and version',
+                        isDarkMode: isDarkMode,
                         onTap: _openAbout,
                       ),
 
@@ -652,8 +698,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         height: 55,
                         child: ElevatedButton.icon(
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.white,
-                            foregroundColor: darkOlive,
+                            backgroundColor: isDarkMode
+                                ? oliveDrab
+                                : Colors.white,
+                            foregroundColor: isDarkMode
+                                ? Colors.white
+                                : darkOlive,
                             elevation: 0,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(18),

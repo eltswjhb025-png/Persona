@@ -7,12 +7,14 @@ import '../widgets/birthday_card.dart';
 import '../database/database_helper.dart';
 import '../services/reminder_service.dart';
 import '../services/birthday_service.dart';
+import '../services/theme_service.dart';
 
 class BirthdaysScreen extends StatefulWidget {
   const BirthdaysScreen({super.key});
 
   @override
-  State<BirthdaysScreen> createState() => _BirthdaysScreenState();
+  State<BirthdaysScreen> createState() =>
+      _BirthdaysScreenState();
 }
 
 class _BirthdaysScreenState extends State<BirthdaysScreen> {
@@ -28,6 +30,9 @@ class _BirthdaysScreenState extends State<BirthdaysScreen> {
   static const Color lightOlive = Color(0xFFE8ECD5);
   static const Color background = Color(0xFFF4F5E9);
   static const Color darkOlive = Color(0xFF3F4A16);
+
+  static const Color darkBackground = Color(0xFF1E2412);
+  static const Color darkCard = Color(0xFF2B321B);
 
   // ============================================================
   // LOAD PEOPLE
@@ -114,6 +119,7 @@ class _BirthdaysScreenState extends State<BirthdaysScreen> {
 
   Widget glassCard({
     required Widget child,
+    required bool isDarkMode,
     EdgeInsets padding = const EdgeInsets.all(18),
     double borderRadius = 24,
   }) {
@@ -131,7 +137,12 @@ class _BirthdaysScreenState extends State<BirthdaysScreen> {
           padding: padding,
 
           decoration: BoxDecoration(
-            color: Colors.white.withValues(
+            color:
+            isDarkMode
+                ? Colors.black.withValues(
+              alpha: 0.22,
+            )
+                : Colors.white.withValues(
               alpha: 0.15,
             ),
 
@@ -141,8 +152,12 @@ class _BirthdaysScreenState extends State<BirthdaysScreen> {
             ),
 
             border: Border.all(
-              color: Colors.white.withValues(
-                alpha: 0.28,
+              color:
+              Colors.white.withValues(
+                alpha:
+                isDarkMode
+                    ? 0.16
+                    : 0.28,
               ),
 
               width: 1,
@@ -164,8 +179,17 @@ class _BirthdaysScreenState extends State<BirthdaysScreen> {
     final List<Person> sortedPeople =
     getSortedPeople();
 
+    final ThemeService themeService =
+    ThemeProvider.of(context);
+
+    final bool isDarkMode =
+        themeService.isDarkMode;
+
     return Scaffold(
-      backgroundColor: oliveDrab,
+      backgroundColor:
+      isDarkMode
+          ? darkBackground
+          : oliveDrab,
 
       // ========================================================
       // APP BAR
@@ -184,7 +208,10 @@ class _BirthdaysScreenState extends State<BirthdaysScreen> {
               decoration: BoxDecoration(
                 color:
                 Colors.white.withValues(
-                  alpha: 0.16,
+                  alpha:
+                  isDarkMode
+                      ? 0.10
+                      : 0.16,
                 ),
 
                 borderRadius:
@@ -195,7 +222,10 @@ class _BirthdaysScreenState extends State<BirthdaysScreen> {
                 border: Border.all(
                   color:
                   Colors.white.withValues(
-                    alpha: 0.25,
+                    alpha:
+                    isDarkMode
+                        ? 0.15
+                        : 0.25,
                   ),
                 ),
               ),
@@ -226,12 +256,22 @@ class _BirthdaysScreenState extends State<BirthdaysScreen> {
       // ========================================================
 
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+        decoration: BoxDecoration(
+          gradient:
+          LinearGradient(
+            begin:
+            Alignment.topLeft,
+            end:
+            Alignment.bottomRight,
 
-            colors: [
+            colors:
+            isDarkMode
+                ? const [
+              Color(0xFF1E2412),
+              Color(0xFF2B321B),
+              Color(0xFF11150B),
+            ]
+                : const [
               oliveDrab,
               olive,
               darkOlive,
@@ -243,7 +283,9 @@ class _BirthdaysScreenState extends State<BirthdaysScreen> {
           top: false,
 
           child: people.isEmpty
-              ? _buildEmptyState()
+              ? _buildEmptyState(
+            isDarkMode,
+          )
 
               : ListView.builder(
             padding:
@@ -268,8 +310,10 @@ class _BirthdaysScreenState extends State<BirthdaysScreen> {
                   vertical: 6,
                 ),
 
-                child: _buildBirthdayItem(
+                child:
+                _buildBirthdayItem(
                   person,
+                  isDarkMode,
                 ),
               );
             },
@@ -303,10 +347,14 @@ class _BirthdaysScreenState extends State<BirthdaysScreen> {
           onPressed: addPerson,
 
           backgroundColor:
-          Colors.white,
+          isDarkMode
+              ? oliveDrab
+              : Colors.white,
 
           foregroundColor:
-          darkOlive,
+          isDarkMode
+              ? Colors.white
+              : darkOlive,
 
           elevation: 4,
 
@@ -335,13 +383,18 @@ class _BirthdaysScreenState extends State<BirthdaysScreen> {
   // EMPTY STATE
   // ============================================================
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(
+      bool isDarkMode,
+      ) {
     return Center(
       child: Padding(
         padding:
         const EdgeInsets.all(24),
 
         child: glassCard(
+          isDarkMode:
+          isDarkMode,
+
           padding:
           const EdgeInsets.symmetric(
             horizontal: 28,
@@ -361,10 +414,14 @@ class _BirthdaysScreenState extends State<BirthdaysScreen> {
                   18,
                 ),
 
-                decoration: BoxDecoration(
+                decoration:
+                BoxDecoration(
                   color:
                   Colors.white.withValues(
-                    alpha: 0.15,
+                    alpha:
+                    isDarkMode
+                        ? 0.10
+                        : 0.15,
                   ),
 
                   shape:
@@ -372,8 +429,12 @@ class _BirthdaysScreenState extends State<BirthdaysScreen> {
 
                   border: Border.all(
                     color:
-                    Colors.white.withValues(
-                      alpha: 0.2,
+                    Colors.white
+                        .withValues(
+                      alpha:
+                      isDarkMode
+                          ? 0.15
+                          : 0.2,
                     ),
                   ),
                 ),
@@ -385,7 +446,9 @@ class _BirthdaysScreenState extends State<BirthdaysScreen> {
                 ),
               ),
 
-              const SizedBox(height: 18),
+              const SizedBox(
+                height: 18,
+              ),
 
               const Text(
                 'No birthdays yet',
@@ -398,7 +461,9 @@ class _BirthdaysScreenState extends State<BirthdaysScreen> {
                 ),
               ),
 
-              const SizedBox(height: 8),
+              const SizedBox(
+                height: 8,
+              ),
 
               Text(
                 'Add someone special to your '
@@ -409,7 +474,8 @@ class _BirthdaysScreenState extends State<BirthdaysScreen> {
 
                 style: TextStyle(
                   color:
-                  Colors.white.withValues(
+                  Colors.white
+                      .withValues(
                     alpha: 0.7,
                   ),
 
@@ -418,7 +484,9 @@ class _BirthdaysScreenState extends State<BirthdaysScreen> {
                 ),
               ),
 
-              const SizedBox(height: 22),
+              const SizedBox(
+                height: 22,
+              ),
 
               // Small visual hint toward the
               // floating action button.
@@ -429,10 +497,15 @@ class _BirthdaysScreenState extends State<BirthdaysScreen> {
                   vertical: 10,
                 ),
 
-                decoration: BoxDecoration(
+                decoration:
+                BoxDecoration(
                   color:
-                  Colors.white.withValues(
-                    alpha: 0.12,
+                  Colors.white
+                      .withValues(
+                    alpha:
+                    isDarkMode
+                        ? 0.08
+                        : 0.12,
                   ),
 
                   borderRadius:
@@ -448,15 +521,20 @@ class _BirthdaysScreenState extends State<BirthdaysScreen> {
                   children: [
                     const Icon(
                       Icons.add,
-                      color: Colors.white,
+                      color:
+                      Colors.white,
                       size: 18,
                     ),
 
-                    const SizedBox(width: 7),
+                    const SizedBox(
+                      width: 7,
+                    ),
 
                     Text(
                       'Add a birthday',
-                      style: TextStyle(
+
+                      style:
+                      TextStyle(
                         color:
                         Colors.white
                             .withValues(
@@ -484,8 +562,12 @@ class _BirthdaysScreenState extends State<BirthdaysScreen> {
 
   Widget _buildBirthdayItem(
       Person person,
+      bool isDarkMode,
       ) {
     return glassCard(
+      isDarkMode:
+      isDarkMode,
+
       padding:
       const EdgeInsets.all(6),
 
@@ -556,7 +638,9 @@ class _BirthdaysScreenState extends State<BirthdaysScreen> {
             builder: (context) {
               return AlertDialog(
                 backgroundColor:
-                const Color(0xFFF4F5E9),
+                isDarkMode
+                    ? darkCard
+                    : background,
 
                 shape:
                 RoundedRectangleBorder(
@@ -566,11 +650,15 @@ class _BirthdaysScreenState extends State<BirthdaysScreen> {
                   ),
                 ),
 
-                title: const Text(
+                title: Text(
                   'Delete Person',
 
                   style: TextStyle(
-                    color: darkOlive,
+                    color:
+                    isDarkMode
+                        ? Colors.white
+                        : darkOlive,
+
                     fontWeight:
                     FontWeight.bold,
                   ),
@@ -580,8 +668,11 @@ class _BirthdaysScreenState extends State<BirthdaysScreen> {
                   'Are you sure you want '
                       'to delete ${person.name}?',
 
-                  style: const TextStyle(
-                    color: darkOlive,
+                  style: TextStyle(
+                    color:
+                    isDarkMode
+                        ? Colors.white
+                        : darkOlive,
                   ),
                 ),
 
@@ -593,11 +684,14 @@ class _BirthdaysScreenState extends State<BirthdaysScreen> {
                       );
                     },
 
-                    child: const Text(
+                    child: Text(
                       'Cancel',
 
                       style: TextStyle(
-                        color: oliveDrab,
+                        color:
+                        isDarkMode
+                            ? oliveDrab
+                            : oliveDrab,
                       ),
                     ),
                   ),
@@ -606,7 +700,9 @@ class _BirthdaysScreenState extends State<BirthdaysScreen> {
                     style:
                     ElevatedButton.styleFrom(
                       backgroundColor:
-                      olive,
+                      isDarkMode
+                          ? oliveDrab
+                          : olive,
 
                       foregroundColor:
                       Colors.white,
