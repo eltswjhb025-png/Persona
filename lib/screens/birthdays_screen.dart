@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import '../models/person.dart';
 import 'add_person_screen.dart';
@@ -17,16 +19,19 @@ class _BirthdaysScreenState extends State<BirthdaysScreen> {
   final List<Person> people = [];
   final DatabaseHelper databaseHelper = DatabaseHelper();
 
-  // Olive colour palette
+  // ============================================================
+  // PERSONA COLOURS
+  // ============================================================
+
   static const Color oliveDrab = Color(0xFF6B8E23);
   static const Color olive = Color(0xFF808000);
   static const Color lightOlive = Color(0xFFE8ECD5);
   static const Color background = Color(0xFFF4F5E9);
   static const Color darkOlive = Color(0xFF3F4A16);
 
-  // Dark mode colours
-  static const Color darkBackground = Color(0xFF121510);
-  static const Color darkCard = Color(0xFF1E231B);
+  // ============================================================
+  // LOAD PEOPLE
+  // ============================================================
 
   Future<void> loadPeople() async {
     final List<Person> savedPeople =
@@ -42,11 +47,19 @@ class _BirthdaysScreenState extends State<BirthdaysScreen> {
     });
   }
 
+  // ============================================================
+  // INITIALIZE
+  // ============================================================
+
   @override
   void initState() {
     super.initState();
     loadPeople();
   }
+
+  // ============================================================
+  // SORT PEOPLE BY NEXT BIRTHDAY
+  // ============================================================
 
   List<Person> getSortedPeople() {
     final List<Person> sortedPeople =
@@ -64,6 +77,10 @@ class _BirthdaysScreenState extends State<BirthdaysScreen> {
 
     return sortedPeople;
   }
+
+  // ============================================================
+  // ADD PERSON
+  // ============================================================
 
   Future<void> addPerson() async {
     final Person? person =
@@ -91,98 +108,247 @@ class _BirthdaysScreenState extends State<BirthdaysScreen> {
     }
   }
 
+  // ============================================================
+  // GLASS CARD
+  // ============================================================
+
+  Widget glassCard({
+    required Widget child,
+    EdgeInsets padding = const EdgeInsets.all(18),
+    double borderRadius = 24,
+  }) {
+    return ClipRRect(
+      borderRadius:
+      BorderRadius.circular(borderRadius),
+
+      child: BackdropFilter(
+        filter: ImageFilter.blur(
+          sigmaX: 14,
+          sigmaY: 14,
+        ),
+
+        child: Container(
+          padding: padding,
+
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(
+              alpha: 0.15,
+            ),
+
+            borderRadius:
+            BorderRadius.circular(
+              borderRadius,
+            ),
+
+            border: Border.all(
+              color: Colors.white.withValues(
+                alpha: 0.28,
+              ),
+
+              width: 1,
+            ),
+          ),
+
+          child: child,
+        ),
+      ),
+    );
+  }
+
+  // ============================================================
+  // BUILD
+  // ============================================================
+
   @override
   Widget build(BuildContext context) {
     final List<Person> sortedPeople =
     getSortedPeople();
 
-    // Check the current theme.
-    final bool isDarkMode =
-        Theme.of(context).brightness ==
-            Brightness.dark;
-
-    // Background changes with Dark Mode.
-    final Color screenBackground =
-    isDarkMode
-        ? darkBackground
-        : background;
-
-    // Empty-state card changes with Dark Mode.
-    final Color cardBackground =
-    isDarkMode
-        ? darkCard
-        : Colors.white;
-
-    // Main heading changes with Dark Mode.
-    final Color headingColor =
-    isDarkMode
-        ? Colors.white
-        : darkOlive;
-
-    // Secondary text changes with Dark Mode.
-    final Color secondaryTextColor =
-    isDarkMode
-        ? Colors.white70
-        : Colors.grey;
-
-    // Empty-state icon background.
-    final Color iconBackground =
-    isDarkMode
-        ? const Color(0xFF2B3326)
-        : lightOlive;
-
     return Scaffold(
-      backgroundColor: screenBackground,
+      backgroundColor: oliveDrab,
 
-      // ---------------- APP BAR ----------------
+      // ========================================================
+      // APP BAR
+      // ========================================================
+
       appBar: AppBar(
-        title: const Text(
-          'Birthdays',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            letterSpacing: 0.5,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+
+        title: Row(
+          children: [
+            Container(
+              padding:
+              const EdgeInsets.all(9),
+
+              decoration: BoxDecoration(
+                color:
+                Colors.white.withValues(
+                  alpha: 0.16,
+                ),
+
+                borderRadius:
+                BorderRadius.circular(
+                  14,
+                ),
+
+                border: Border.all(
+                  color:
+                  Colors.white.withValues(
+                    alpha: 0.25,
+                  ),
+                ),
+              ),
+
+              child: const Icon(
+                Icons.cake_outlined,
+                color: Colors.white,
+                size: 22,
+              ),
+            ),
+
+            const SizedBox(width: 12),
+
+            const Text(
+              'Birthdays',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 21,
+              ),
+            ),
+          ],
+        ),
+      ),
+
+      // ========================================================
+      // BODY
+      // ========================================================
+
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+
+            colors: [
+              oliveDrab,
+              olive,
+              darkOlive,
+            ],
           ),
         ),
 
-        // The AppBar colour comes from the global
-        // theme in main.dart.
-        centerTitle: true,
-      ),
+        child: SafeArea(
+          top: false,
 
-      // ---------------- BODY ----------------
-      body: people.isEmpty
-          ? Center(
-        child: Container(
-          margin:
-          const EdgeInsets.all(24),
+          child: people.isEmpty
+              ? _buildEmptyState()
 
-          padding:
-          const EdgeInsets.all(30),
-
-          decoration: BoxDecoration(
-            color: cardBackground,
-
-            borderRadius:
-            BorderRadius.circular(24),
-
-            border: Border.all(
-              color: isDarkMode
-                  ? const Color(0xFF39412F)
-                  : lightOlive,
-              width: 2,
+              : ListView.builder(
+            padding:
+            const EdgeInsets.only(
+              top: 12,
+              bottom: 100,
             ),
 
-            boxShadow: [
-              BoxShadow(
-                color: olive.withOpacity(
-                  0.12,
+            itemCount:
+            sortedPeople.length,
+
+            itemBuilder:
+                (context, index) {
+              final Person person =
+              sortedPeople[index];
+
+              return Padding(
+                padding:
+                const EdgeInsets
+                    .symmetric(
+                  horizontal: 14,
+                  vertical: 6,
                 ),
-                blurRadius: 15,
-                offset:
-                const Offset(0, 6),
-              ),
-            ],
+
+                child: _buildBirthdayItem(
+                  person,
+                ),
+              );
+            },
           ),
+        ),
+      ),
+
+      // ========================================================
+      // ADD BUTTON
+      // ========================================================
+
+      floatingActionButton:
+      Container(
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+
+          boxShadow: [
+            BoxShadow(
+              color:
+              darkOlive.withValues(
+                alpha: 0.35,
+              ),
+
+              blurRadius: 12,
+              spreadRadius: 2,
+            ),
+          ],
+        ),
+
+        child: FloatingActionButton(
+          onPressed: addPerson,
+
+          backgroundColor:
+          Colors.white,
+
+          foregroundColor:
+          darkOlive,
+
+          elevation: 4,
+
+          shape:
+          RoundedRectangleBorder(
+            borderRadius:
+            BorderRadius.circular(
+              18,
+            ),
+          ),
+
+          child: const Icon(
+            Icons.add,
+            size: 30,
+          ),
+        ),
+      ),
+
+      floatingActionButtonLocation:
+      FloatingActionButtonLocation
+          .endFloat,
+    );
+  }
+
+  // ============================================================
+  // EMPTY STATE
+  // ============================================================
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Padding(
+        padding:
+        const EdgeInsets.all(24),
+
+        child: glassCard(
+          padding:
+          const EdgeInsets.symmetric(
+            horizontal: 28,
+            vertical: 32,
+          ),
+
+          borderRadius: 26,
 
           child: Column(
             mainAxisSize:
@@ -195,261 +361,301 @@ class _BirthdaysScreenState extends State<BirthdaysScreen> {
                   18,
                 ),
 
-                decoration:
-                BoxDecoration(
+                decoration: BoxDecoration(
                   color:
-                  iconBackground,
+                  Colors.white.withValues(
+                    alpha: 0.15,
+                  ),
+
                   shape:
                   BoxShape.circle,
+
+                  border: Border.all(
+                    color:
+                    Colors.white.withValues(
+                      alpha: 0.2,
+                    ),
+                  ),
                 ),
 
                 child: const Icon(
                   Icons.cake_outlined,
                   size: 45,
-                  color: oliveDrab,
+                  color: Colors.white,
                 ),
               ),
 
               const SizedBox(height: 18),
 
-              Text(
+              const Text(
                 'No birthdays yet',
 
                 style: TextStyle(
+                  color: Colors.white,
                   fontSize: 20,
                   fontWeight:
                   FontWeight.bold,
-                  color: headingColor,
                 ),
               ),
 
               const SizedBox(height: 8),
 
               Text(
-                'Add someone special to your birthday list.',
+                'Add someone special to your '
+                    'birthday list.',
 
                 textAlign:
                 TextAlign.center,
 
                 style: TextStyle(
-                  fontSize: 14,
                   color:
-                  secondaryTextColor,
+                  Colors.white.withValues(
+                    alpha: 0.7,
+                  ),
+
+                  fontSize: 14,
+                  height: 1.4,
+                ),
+              ),
+
+              const SizedBox(height: 22),
+
+              // Small visual hint toward the
+              // floating action button.
+              Container(
+                padding:
+                const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
+                ),
+
+                decoration: BoxDecoration(
+                  color:
+                  Colors.white.withValues(
+                    alpha: 0.12,
+                  ),
+
+                  borderRadius:
+                  BorderRadius.circular(
+                    14,
+                  ),
+                ),
+
+                child: Row(
+                  mainAxisSize:
+                  MainAxisSize.min,
+
+                  children: [
+                    const Icon(
+                      Icons.add,
+                      color: Colors.white,
+                      size: 18,
+                    ),
+
+                    const SizedBox(width: 7),
+
+                    Text(
+                      'Add a birthday',
+                      style: TextStyle(
+                        color:
+                        Colors.white
+                            .withValues(
+                          alpha: 0.85,
+                        ),
+
+                        fontSize: 13,
+                        fontWeight:
+                        FontWeight.w600,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
         ),
-      )
+      ),
+    );
+  }
 
-      // ---------------- BIRTHDAY LIST ----------------
-          : ListView.builder(
-        padding:
-        const EdgeInsets.only(
-          top: 12,
-          bottom: 90,
-        ),
+  // ============================================================
+  // BIRTHDAY ITEM
+  // ============================================================
 
-        itemCount:
-        sortedPeople.length,
+  Widget _buildBirthdayItem(
+      Person person,
+      ) {
+    return glassCard(
+      padding:
+      const EdgeInsets.all(6),
 
-        itemBuilder:
-            (context, index) {
-          final Person person =
-          sortedPeople[index];
+      borderRadius: 24,
 
-          return Padding(
-            padding:
-            const EdgeInsets.symmetric(
-              horizontal: 12,
-              vertical: 5,
-            ),
+      child: BirthdayCard(
+        person: person,
 
-            child: BirthdayCard(
-              person: person,
+        // ======================================================
+        // EDIT
+        // ======================================================
 
-              // ---------------- EDIT ----------------
-              onEdit: () async {
-                final Person?
-                updatedPerson =
-                await Navigator
-                    .push<Person>(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) =>
-                        AddPersonScreen(
-                          person: person,
-                        ),
+        onEdit: () async {
+          final Person? updatedPerson =
+          await Navigator.push<Person>(
+            context,
+
+            MaterialPageRoute(
+              builder: (context) =>
+                  AddPersonScreen(
+                    person: person,
                   ),
-                );
+            ),
+          );
 
-                if (updatedPerson !=
-                    null) {
-                  await ReminderService
-                      .cancelBirthdayReminders(
-                    person,
-                  );
+          if (updatedPerson != null) {
+            await ReminderService
+                .cancelBirthdayReminders(
+              person,
+            );
 
-                  await databaseHelper
-                      .updatePerson(
-                    updatedPerson,
-                  );
+            await databaseHelper
+                .updatePerson(
+              updatedPerson,
+            );
 
-                  if (!mounted) {
-                    return;
-                  }
+            if (!mounted) {
+              return;
+            }
 
-                  setState(() {
-                    final int index =
-                    people.indexWhere(
-                          (p) =>
-                      p.id ==
-                          person.id,
-                    );
+            setState(() {
+              final int index =
+              people.indexWhere(
+                    (p) => p.id == person.id,
+              );
 
-                    if (index != -1) {
-                      people[index] =
-                          updatedPerson;
-                    }
-                  });
+              if (index != -1) {
+                people[index] =
+                    updatedPerson;
+              }
+            });
 
-                  await ReminderService
-                      .scheduleBirthdayReminders(
-                    updatedPerson,
-                  );
-                }
-              },
+            await ReminderService
+                .scheduleBirthdayReminders(
+              updatedPerson,
+            );
+          }
+        },
 
-              // ---------------- DELETE ----------------
-              onDelete: () {
-                showDialog(
-                  context: context,
-                  builder: (context) {
-                    return AlertDialog(
+        // ======================================================
+        // DELETE
+        // ======================================================
+
+        onDelete: () {
+          showDialog(
+            context: context,
+
+            builder: (context) {
+              return AlertDialog(
+                backgroundColor:
+                const Color(0xFFF4F5E9),
+
+                shape:
+                RoundedRectangleBorder(
+                  borderRadius:
+                  BorderRadius.circular(
+                    22,
+                  ),
+                ),
+
+                title: const Text(
+                  'Delete Person',
+
+                  style: TextStyle(
+                    color: darkOlive,
+                    fontWeight:
+                    FontWeight.bold,
+                  ),
+                ),
+
+                content: Text(
+                  'Are you sure you want '
+                      'to delete ${person.name}?',
+
+                  style: const TextStyle(
+                    color: darkOlive,
+                  ),
+                ),
+
+                actions: [
+                  TextButton(
+                    onPressed: () {
+                      Navigator.pop(
+                        context,
+                      );
+                    },
+
+                    child: const Text(
+                      'Cancel',
+
+                      style: TextStyle(
+                        color: oliveDrab,
+                      ),
+                    ),
+                  ),
+
+                  ElevatedButton(
+                    style:
+                    ElevatedButton.styleFrom(
                       backgroundColor:
-                      cardBackground,
+                      olive,
+
+                      foregroundColor:
+                      Colors.white,
 
                       shape:
                       RoundedRectangleBorder(
                         borderRadius:
-                        BorderRadius
-                            .circular(
-                          20,
+                        BorderRadius.circular(
+                          12,
                         ),
                       ),
+                    ),
 
-                      title: Text(
-                        'Delete Person',
+                    onPressed: () async {
+                      await ReminderService
+                          .cancelBirthdayReminders(
+                        person,
+                      );
 
-                        style: TextStyle(
-                          color:
-                          headingColor,
-                          fontWeight:
-                          FontWeight
-                              .bold,
-                        ),
-                      ),
+                      await databaseHelper
+                          .deletePerson(
+                        person.id,
+                      );
 
-                      content: Text(
-                        'Are you sure you want to delete ${person.name}?',
-                      ),
+                      if (!mounted) {
+                        return;
+                      }
 
-                      actions: [
-                        TextButton(
-                          onPressed: () {
-                            Navigator.pop(
-                              context,
-                            );
-                          },
+                      setState(() {
+                        people.remove(
+                          person,
+                        );
+                      });
 
-                          child: const Text(
-                            'Cancel',
+                      Navigator.pop(
+                        context,
+                      );
+                    },
 
-                            style:
-                            TextStyle(
-                              color:
-                              oliveDrab,
-                            ),
-                          ),
-                        ),
-
-                        TextButton(
-                          onPressed:
-                              () async {
-                            await ReminderService
-                                .cancelBirthdayReminders(
-                              person,
-                            );
-
-                            await databaseHelper
-                                .deletePerson(
-                              person.id,
-                            );
-
-                            if (!mounted) {
-                              return;
-                            }
-
-                            setState(() {
-                              people.remove(
-                                person,
-                              );
-                            });
-
-                            Navigator.pop(
-                              context,
-                            );
-                          },
-
-                          child: const Text(
-                            'Delete',
-
-                            style:
-                            TextStyle(
-                              color:
-                              Colors.red,
-                              fontWeight:
-                              FontWeight
-                                  .bold,
-                            ),
-                          ),
-                        ),
-                      ],
-                    );
-                  },
-                );
-              },
-            ),
+                    child: const Text(
+                      'Delete',
+                    ),
+                  ),
+                ],
+              );
+            },
           );
         },
       ),
-
-      // ---------------- ADD BUTTON ----------------
-      floatingActionButton:
-      FloatingActionButton(
-        onPressed: addPerson,
-
-        backgroundColor: olive,
-
-        foregroundColor: Colors.white,
-
-        elevation: 6,
-
-        shape:
-        RoundedRectangleBorder(
-          borderRadius:
-          BorderRadius.circular(18),
-        ),
-
-        child: const Icon(
-          Icons.add,
-          size: 30,
-        ),
-      ),
-
-      floatingActionButtonLocation:
-      FloatingActionButtonLocation
-          .endFloat,
     );
   }
 }

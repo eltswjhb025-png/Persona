@@ -75,4 +75,42 @@ class GoogleCalendarService {
       return [];
     }
   }
+
+  static Future<List<calendar.Event>> getUpcomingEvents({
+    required DateTime startDate,
+    required DateTime endDate,
+  }) async {
+    final calendarApi = await getCalendarApi();
+
+    if (calendarApi == null) {
+      return [];
+    }
+
+    try {
+      final events = await calendarApi.events.list(
+        'primary',
+        timeMin: startDate.toUtc(),
+        timeMax: endDate.toUtc(),
+        singleEvents: true,
+        orderBy: 'startTime',
+      );
+
+      print(
+        'GOOGLE UPCOMING EVENTS: '
+            '${events.items?.length ?? 0} events found.',
+      );
+
+      for (final event in events.items ?? []) {
+        print(
+          'EVENT: ${event.summary} | '
+              'START: ${event.start?.dateTime ?? event.start?.date}',
+        );
+      }
+
+      return events.items ?? [];
+    } catch (e) {
+      print('GOOGLE UPCOMING EVENTS ERROR: $e');
+      return [];
+    }
+  }
 }

@@ -1,121 +1,186 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:persona/screens/login_screen.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
+import 'firebase_options.dart';
+import 'screens/login_screen.dart';
 import 'services/google_auth_service.dart';
 import 'services/notification_service.dart';
 import 'services/theme_service.dart';
-import 'firebase_options.dart';
 
 Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+WidgetsFlutterBinding.ensureInitialized();
 
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+// ============================================================
+// SYSTEM UI
+// ============================================================
+//
+// Allows the Persona background to extend underneath the
+// Android status bar and navigation bar.
+//
+// This prevents the bottom navigation area from appearing
+// as a separate white section.
+//
+// ============================================================
 
-  if (Platform.isWindows ||
-      Platform.isLinux ||
-      Platform.isMacOS) {
-    sqfliteFfiInit();
-    databaseFactory = databaseFactoryFfi;
-  }
+await SystemChrome.setEnabledSystemUIMode(
+SystemUiMode.edgeToEdge,
+);
 
-  await dotenv.load(fileName: '.env');
+  SystemChrome.setSystemUIOverlayStyle(
+const SystemUiOverlayStyle(
+// ----------------------------------------------------------
+// Status bar
+// ----------------------------------------------------------
 
-  await GoogleAuthService.initialize();
+statusBarColor: Colors.transparent,
+statusBarIconBrightness: Brightness.light,
 
-  await NotificationService.initialize();
+// ----------------------------------------------------------
+// Navigation bar
+// ----------------------------------------------------------
 
-  // Create and load the saved theme
-  final themeService = ThemeService();
-  await themeService.loadTheme();
+systemNavigationBarColor: Colors.transparent,
+systemNavigationBarIconBrightness: Brightness.light,
 
-  runApp(
-    PersonaApp(
-      themeService: themeService,
-    ),
-  );
+// Prevent Android from adding a contrast scrim.
+systemNavigationBarContrastEnforced: false,
+
+// Android status-bar contrast
+systemStatusBarContrastEnforced: false,
+),
+);
+
+// ============================================================
+// SQLite
+// ============================================================
+
+// sqflite_common_ffi is only needed for desktop platforms.
+//
+// Android and iOS should use the normal sqflite database
+// factory provided by the sqflite package.
+
+if (Platform.isWindows ||
+Platform.isLinux ||
+Platform.isMacOS) {
+sqfliteFfiInit();
+databaseFactory = databaseFactoryFfi;
 }
 
+// ============================================================
+// Environment
+// ============================================================
+
+await dotenv.load(
+fileName: '.env',
+);
+
+// ============================================================
+// Firebase
+// ============================================================
+
+await Firebase.initializeApp(
+options: DefaultFirebaseOptions.currentPlatform,
+);
+
+// ============================================================
+// Services
+// ============================================================
+
+await GoogleAuthService.initialize();
+
+await NotificationService.initialize();
+
+// ============================================================
+// Theme
+// ============================================================
+
+final ThemeService themeService = ThemeService();
+
+await themeService.loadTheme();
+
+// ============================================================
+// Run App
+// ============================================================
+
+runApp(
+ThemeProvider(
+themeService: themeService,
+child: const PersonaApp(),
+),
+);
+}
+
+// ============================================================
+// Persona App
+// ============================================================
+
 class PersonaApp extends StatelessWidget {
-  final ThemeService themeService;
+const PersonaApp({
+super.key,
+});
 
-  const PersonaApp({
-    super.key,
-    required this.themeService,
-  });
+@override
+Widget build(BuildContext context) {
+// Get the shared ThemeService from ThemeProvider.
+//
+// Because ThemeProvider extends InheritedNotifier,
+// PersonaApp will rebuild whenever ThemeService calls
+// notifyListeners().
 
-  static const Color olive = Color(0xFF6B8E23);
-  static const Color darkOlive = Color(0xFF3F4A16);
+final ThemeService themeService =
+ThemeProvider.of(context);
 
-  @override
-  Widget build(BuildContext context) {
-    return ThemeProvider(
-      themeService: themeService,
-      child: AnimatedBuilder(
-        animation: themeService,
-        builder: (context, child) {
-          return MaterialApp(
-            debugShowCheckedModeBanner: false,
-            title: 'Persona',
+return MaterialApp(
+debugShowCheckedModeBanner: false,
 
-            themeMode: themeService.themeMode,
+title: 'Persona',
 
-            // LIGHT THEME
-            theme: ThemeData(
-              useMaterial3: true,
-              brightness: Brightness.light,
+// ==========================================================
+// Light Theme
+// ==========================================================
 
-              colorScheme: ColorScheme.fromSeed(
-                seedColor: olive,
-                brightness: Brightness.light,
-              ),
+theme: ThemeData(
+brightness: Brightness.light,
 
-              scaffoldBackgroundColor:
-              const Color(0xFFF4F5E9),
+colorScheme: ColorScheme.fromSeed(
+seedColor: const Color(0xFF808000),
+brightness: Brightness.light,
+),
 
-              appBarTheme: const AppBarTheme(
-                backgroundColor: olive,
-                foregroundColor: Colors.white,
-              ),
+useMaterial3: true,
+),
 
-              cardTheme: const CardThemeData(
-                color: Colors.white,
-              ),
-            ),
+// ==========================================================
+// Dark Theme
+// ==========================================================
 
-            // DARK THEME
-            darkTheme: ThemeData(
-              useMaterial3: true,
-              brightness: Brightness.dark,
+darkTheme: ThemeData(
+brightness: Brightness.dark,
 
-              colorScheme: ColorScheme.fromSeed(
-                seedColor: olive,
-                brightness: Brightness.dark,
-              ),
+colorScheme: ColorScheme.fromSeed(
+seedColor: const Color(0xFF6B8E23),
+brightness: Brightness.dark,
+),
 
-              scaffoldBackgroundColor:
-              const Color(0xFF121510),
+useMaterial3: true,
+),
 
-              appBarTheme: const AppBarTheme(
-                backgroundColor: darkOlive,
-                foregroundColor: Colors.white,
-              ),
+// ==========================================================
+// Current Theme
+// ==========================================================
 
-              cardTheme: const CardThemeData(
-                color: Color(0xFF1E231B),
-              ),
-            ),
+themeMode: themeService.themeMode,
 
-            home: const LoginScreen(),
-          );
-        },
-      ),
-    );
-  }
+// ==========================================================
+// First Screen
+// ==========================================================
+
+home: const LoginScreen(),
+);
+}
 }
