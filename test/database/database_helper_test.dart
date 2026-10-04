@@ -22,7 +22,6 @@ void main() {
   });
 
   group('DatabaseHelper', () {
-
     test('inserts and retrieves a person', () async {
       final Person person = Person(
         id: '1',
@@ -95,95 +94,98 @@ void main() {
 
       expect(people, isEmpty);
     });
-  });
 
-  test('inserts and retrieves a calendar event', () async {
-    final CalendarEvent event = CalendarEvent(
-      id: 'event_001',
-      title: 'Study Chinese',
-      date: DateTime(2026, 10, 5, 18, 0),
-      description: 'Practice HSK vocabulary',
-      reminder: true,
+    test('inserts and retrieves a calendar event', () async {
+      final CalendarEvent event = CalendarEvent(
+        id: 'event_001',
+        title: 'Study Chinese',
+        date: DateTime(2026, 10, 5, 18, 0),
+        description: 'Practice HSK vocabulary',
+        reminder: true,
+      );
+
+      await databaseHelper.insertCalendarEvent(event);
+
+      final List<CalendarEvent> events =
+      await databaseHelper.getCalendarEvents();
+
+      expect(events.length, 1);
+      expect(events[0].id, 'event_001');
+      expect(events[0].title, 'Study Chinese');
+      expect(
+        events[0].date,
+        DateTime(2026, 10, 5, 18, 0),
+      );
+      expect(
+        events[0].description,
+        'Practice HSK vocabulary',
+      );
+      expect(events[0].reminder, true);
+    });
+
+    test('updates a calendar event', () async {
+      final CalendarEvent event = CalendarEvent(
+        id: 'event_002',
+        title: 'Old Event',
+        date: DateTime(2026, 10, 5, 18, 0),
+        description: 'Old description',
+        reminder: false,
+      );
+
+      await databaseHelper.insertCalendarEvent(event);
+
+      final CalendarEvent updatedEvent = CalendarEvent(
+        id: 'event_002',
+        title: 'New Event',
+        date: DateTime(2026, 10, 6, 19, 0),
+        description: 'New description',
+        reminder: true,
+      );
+
+      await databaseHelper.updateCalendarEvent(updatedEvent);
+
+      final List<CalendarEvent> events =
+      await databaseHelper.getCalendarEvents();
+
+      expect(events.length, 1);
+      expect(events[0].id, 'event_002');
+      expect(events[0].title, 'New Event');
+      expect(
+        events[0].date,
+        DateTime(2026, 10, 6, 19, 0),
+      );
+      expect(
+        events[0].description,
+        'New description',
+      );
+      expect(events[0].reminder, true);
+    });
+
+    test('deletes a calendar event', () async {
+      final CalendarEvent event = CalendarEvent(
+        id: 'event_003',
+        title: 'Delete Test',
+        date: DateTime(2026, 10, 7, 18, 0),
+      );
+
+      await databaseHelper.insertCalendarEvent(event);
+
+      await databaseHelper.deleteCalendarEvent(event.id);
+
+      final List<CalendarEvent> events =
+      await databaseHelper.getCalendarEvents();
+
+      expect(events, isEmpty);
+    });
+
+    test(
+      'returns an empty list when there are no calendar events',
+          () async {
+        final List<CalendarEvent> events =
+        await databaseHelper.getCalendarEvents();
+
+        expect(events, isEmpty);
+      },
     );
-
-    await databaseHelper.insertCalendarEvent(event);
-
-    final List<CalendarEvent> events =
-    await databaseHelper.getCalendarEvents();
-
-    expect(events.length, 1);
-    expect(events[0].id, 'event_001');
-    expect(events[0].title, 'Study Chinese');
-    expect(
-      events[0].date,
-      DateTime(2026, 10, 5, 18, 0),
-    );
-    expect(
-      events[0].description,
-      'Practice HSK vocabulary',
-    );
-    expect(events[0].reminder, true);
-  });
-
-  test('updates a calendar event', () async {
-    final CalendarEvent event = CalendarEvent(
-      id: 'event_002',
-      title: 'Old Event',
-      date: DateTime(2026, 10, 5, 18, 0),
-      description: 'Old description',
-      reminder: false,
-    );
-
-    await databaseHelper.insertCalendarEvent(event);
-
-    final CalendarEvent updatedEvent = CalendarEvent(
-      id: 'event_002',
-      title: 'New Event',
-      date: DateTime(2026, 10, 6, 19, 0),
-      description: 'New description',
-      reminder: true,
-    );
-
-    await databaseHelper.updateCalendarEvent(updatedEvent);
-
-    final List<CalendarEvent> events =
-    await databaseHelper.getCalendarEvents();
-
-    expect(events.length, 1);
-    expect(events[0].id, 'event_002');
-    expect(events[0].title, 'New Event');
-    expect(
-      events[0].date,
-      DateTime(2026, 10, 6, 19, 0),
-    );
-    expect(
-      events[0].description,
-      'New description',
-    );
-    expect(events[0].reminder, true);
-  });
-
-  test('deletes a calendar event', () async {
-    final CalendarEvent event = CalendarEvent(
-      id: 'event_003',
-      title: 'Delete Test',
-      date: DateTime(2026, 10, 7, 18, 0),
-    );
-
-    await databaseHelper.insertCalendarEvent(event);
-
-    await databaseHelper.deleteCalendarEvent(event.id);
-
-    final List<CalendarEvent> events =
-    await databaseHelper.getCalendarEvents();
-
-    expect(events, isEmpty);
-  });
-
-  test('returns an empty list when there are no calendar events', () async {
-    final List<CalendarEvent> events =
-    await databaseHelper.getCalendarEvents();
-
-    expect(events, isEmpty);
   });
 }

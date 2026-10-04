@@ -1,5 +1,6 @@
 import '../models/person.dart';
 import 'notification_service.dart';
+import 'notification_settings_service.dart';
 
 class ReminderService {
 
@@ -36,33 +37,84 @@ class ReminderService {
   }
 
   static Future<void> scheduleBirthdayReminders(Person person) async {
+    // Check whether Persona notifications are enabled.
+    final bool notificationsEnabled =
+    await NotificationSettingsService.getNotificationsEnabled();
+
+    // Check whether birthday reminders are enabled.
+    final bool birthdayRemindersEnabled =
+    await NotificationSettingsService.getBirthdayRemindersEnabled();
+
+    // If either main setting is OFF, cancel any existing reminders
+    // for this person and do not schedule new ones.
+    if (!notificationsEnabled || !birthdayRemindersEnabled) {
+      await cancelBirthdayReminders(person);
+      return;
+    }
+
     final List<DateTime> reminderDates = getReminderDates(person);
     final DateTime now = DateTime.now();
 
-    if (reminderDates[0].isAfter(now)) {
+    // =========================
+    // 7 DAYS BEFORE
+    // =========================
+
+    final bool sevenDaysBeforeEnabled =
+    await NotificationSettingsService.getSevenDaysBeforeEnabled();
+
+    if (sevenDaysBeforeEnabled &&
+        reminderDates[0].isAfter(now)) {
       await NotificationService.scheduleNotification(
         id: '${person.id}_7'.hashCode,
         title: 'Birthday Reminder',
         body: '${person.name}\'s birthday is in 7 days!',
         scheduledDate: reminderDates[0],
       );
+    } else if (!sevenDaysBeforeEnabled) {
+      await NotificationService.cancelNotification(
+        '${person.id}_7'.hashCode,
+      );
     }
 
-    if (reminderDates[1].isAfter(now)) {
+    // =========================
+    // 1 DAY BEFORE
+    // =========================
+
+    final bool oneDayBeforeEnabled =
+    await NotificationSettingsService.getOneDayBeforeEnabled();
+
+    if (oneDayBeforeEnabled &&
+        reminderDates[1].isAfter(now)) {
       await NotificationService.scheduleNotification(
         id: '${person.id}_1'.hashCode,
         title: 'Birthday Reminder',
         body: '${person.name}\'s birthday is tomorrow!',
         scheduledDate: reminderDates[1],
       );
+    } else if (!oneDayBeforeEnabled) {
+      await NotificationService.cancelNotification(
+        '${person.id}_1'.hashCode,
+      );
     }
 
-    if (reminderDates[2].isAfter(now)) {
+    // =========================
+    // ON BIRTHDAY
+    // =========================
+
+    final bool onBirthdayEnabled =
+    await NotificationSettingsService.getOnBirthdayEnabled();
+
+    if (onBirthdayEnabled &&
+        reminderDates[2].isAfter(now)) {
       await NotificationService.scheduleNotification(
         id: '${person.id}_0'.hashCode,
         title: 'Birthday 🎂',
         body: 'Today is ${person.name}\'s birthday!',
         scheduledDate: reminderDates[2],
+      );
+    } else if (!onBirthdayEnabled) {
+      await NotificationService.cancelNotification(
+        '${person.id}_0'.hashCode,
       );
     }
   }

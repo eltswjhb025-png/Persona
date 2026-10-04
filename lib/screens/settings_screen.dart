@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 
 import '../services/theme_service.dart';
 import 'emergency_contact_screen.dart';
+import 'profile_screen.dart';
+import 'notification_settings_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -198,123 +200,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   // ============================================================
-  // Profile
-  // ============================================================
-
-  void _openProfile() {
-    final User? user = FirebaseAuth.instance.currentUser;
-
-    showDialog(
-      context: context,
-      builder: (context) {
-        final bool isDarkMode =
-            Theme.of(context).brightness == Brightness.dark;
-
-        return AlertDialog(
-          backgroundColor: isDarkMode ? darkCard : lightCream,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(22),
-          ),
-          title: Text(
-            'Profile',
-            style: TextStyle(
-              color: isDarkMode ? Colors.white : darkOlive,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Icon(
-                Icons.person,
-                size: 55,
-                color: oliveDrab,
-              ),
-              const SizedBox(height: 15),
-              Text(
-                user?.displayName ?? 'Persona User',
-                style: TextStyle(
-                  color: isDarkMode ? Colors.white : darkOlive,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                user?.email ?? 'No email available',
-                style: TextStyle(
-                  color: isDarkMode
-                      ? Colors.white.withValues(alpha: 0.65)
-                      : Colors.black.withValues(alpha: 0.65),
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: const Text(
-                'CLOSE',
-                style: TextStyle(
-                  color: oliveDrab,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  // ============================================================
   // Notifications & Reminders
   // ============================================================
 
   void _openNotificationSettings() {
-    showDialog(
-      context: context,
-      builder: (context) {
-        final bool isDarkMode =
-            Theme.of(context).brightness == Brightness.dark;
-
-        return AlertDialog(
-          backgroundColor: isDarkMode ? darkCard : lightCream,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(22),
-          ),
-          title: Text(
-            'Notifications & Reminders',
-            style: TextStyle(
-              color: isDarkMode ? Colors.white : darkOlive,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          content: Text(
-            'Persona notifications and birthday reminders are managed by the app notification system.',
-            style: TextStyle(
-              color: isDarkMode ? Colors.white70 : Colors.black87,
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: const Text(
-                'CLOSE',
-                style: TextStyle(
-                  color: oliveDrab,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ],
-        );
-      },
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) =>
+        const NotificationSettingsScreen(),
+      ),
     );
   }
 
@@ -358,14 +253,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
     // ThemeProvider listens to ThemeService and rebuilds this
     // screen whenever notifyListeners() is called.
 
-    final ThemeService themeService =
-    ThemeProvider.of(context);
+    final ThemeService themeService = ThemeProvider.of(context);
 
     final bool isDarkMode = themeService.isDarkMode;
 
     return Scaffold(
       extendBodyBehindAppBar: true,
-
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -384,7 +277,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ],
           ),
         ),
-
         child: SafeArea(
           child: Column(
             children: [
@@ -552,9 +444,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         icon: Icons.person_outline,
                         title: 'Profile',
                         subtitle:
-                        'View your Persona account information',
+                        'View and edit your Persona account information',
                         isDarkMode: isDarkMode,
-                        onTap: _openProfile,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                              const ProfileScreen(),
+                            ),
+                          );
+                        },
                       ),
 
                       const SizedBox(height: 12),
@@ -609,6 +509,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
 
                       const SizedBox(height: 12),
+
+                      // ==================================================
+                      // NOTIFICATIONS & REMINDERS
+                      // ==================================================
 
                       buildSettingTile(
                         icon: Icons.notifications_outlined,

@@ -4,6 +4,7 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import 'package:persona/screens/birthdays_screen.dart';
 import 'package:persona/database/database_helper.dart';
+import 'package:persona/services/theme_service.dart';
 
 void main() {
   setUpAll(() {
@@ -18,14 +19,23 @@ void main() {
     await db.delete('people');
   });
 
+  Widget createTestApp() {
+    final ThemeService themeService = ThemeService();
+
+    return ThemeProvider(
+      themeService: themeService,
+      child: const MaterialApp(
+        home: BirthdaysScreen(),
+      ),
+    );
+  }
+
   group('BirthdaysScreen', () {
     testWidgets(
       'displays Birthdays title',
           (WidgetTester tester) async {
         await tester.pumpWidget(
-          const MaterialApp(
-            home: BirthdaysScreen(),
-          ),
+          createTestApp(),
         );
 
         await tester.pumpAndSettle();
@@ -41,9 +51,7 @@ void main() {
       'displays No birthdays yet when there are no people',
           (WidgetTester tester) async {
         await tester.pumpWidget(
-          const MaterialApp(
-            home: BirthdaysScreen(),
-          ),
+          createTestApp(),
         );
 
         await tester.pumpAndSettle();
@@ -59,9 +67,7 @@ void main() {
       'displays the add button',
           (WidgetTester tester) async {
         await tester.pumpWidget(
-          const MaterialApp(
-            home: BirthdaysScreen(),
-          ),
+          createTestApp(),
         );
 
         await tester.pumpAndSettle();
@@ -72,7 +78,10 @@ void main() {
         );
 
         expect(
-          find.byIcon(Icons.add),
+          find.descendant(
+            of: find.byType(FloatingActionButton),
+            matching: find.byIcon(Icons.add),
+          ),
           findsOneWidget,
         );
       },
@@ -82,16 +91,21 @@ void main() {
       'displays Add Person screen when add button is pressed',
           (WidgetTester tester) async {
         await tester.pumpWidget(
-          const MaterialApp(
-            home: BirthdaysScreen(),
-          ),
+          createTestApp(),
         );
 
         await tester.pumpAndSettle();
 
-        await tester.tap(
-          find.byIcon(Icons.add),
+        final Finder addButton = find.byType(
+          FloatingActionButton,
         );
+
+        expect(
+          addButton,
+          findsOneWidget,
+        );
+
+        await tester.tap(addButton);
 
         await tester.pumpAndSettle();
 

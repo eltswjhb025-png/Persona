@@ -1,17 +1,36 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+
 import 'package:persona/screens/home_screen.dart';
+import 'package:persona/services/theme_service.dart';
 
 void main() {
+  setUpAll(() {
+    sqfliteFfiInit();
+    databaseFactory = databaseFactoryFfi;
+  });
+
+  Widget createTestApp() {
+    final ThemeService themeService = ThemeService();
+
+    return ThemeProvider(
+      themeService: themeService,
+      child: const MaterialApp(
+        home: HomeScreen(),
+      ),
+    );
+  }
+
   group('HomeScreen', () {
     testWidgets(
       'displays Persona title',
           (WidgetTester tester) async {
         await tester.pumpWidget(
-          const MaterialApp(
-            home: HomeScreen(),
-          ),
+          createTestApp(),
         );
+
+        await tester.pump();
 
         expect(
           find.text('Persona'),
@@ -21,32 +40,32 @@ void main() {
     );
 
     testWidgets(
-      'displays Welcome to Persona text',
+      'displays Welcome back text',
           (WidgetTester tester) async {
         await tester.pumpWidget(
-          const MaterialApp(
-            home: HomeScreen(),
-          ),
+          createTestApp(),
         );
 
+        await tester.pump();
+
         expect(
-          find.text('Welcome to Persona'),
+          find.text('Welcome back 👋'),
           findsOneWidget,
         );
       },
     );
 
     testWidgets(
-      'displays My Birthdays menu',
+      'displays Birthdays menu',
           (WidgetTester tester) async {
         await tester.pumpWidget(
-          const MaterialApp(
-            home: HomeScreen(),
-          ),
+          createTestApp(),
         );
 
+        await tester.pump();
+
         expect(
-          find.text('My Birthdays'),
+          find.text('Birthdays'),
           findsOneWidget,
         );
       },
@@ -56,10 +75,10 @@ void main() {
       'displays Calendar menu',
           (WidgetTester tester) async {
         await tester.pumpWidget(
-          const MaterialApp(
-            home: HomeScreen(),
-          ),
+          createTestApp(),
         );
+
+        await tester.pump();
 
         expect(
           find.text('Calendar'),
@@ -72,14 +91,10 @@ void main() {
       'displays Locator menu',
           (WidgetTester tester) async {
         await tester.pumpWidget(
-          const MaterialApp(
-            home: HomeScreen(),
-          ),
+          createTestApp(),
         );
 
-        await tester.ensureVisible(
-          find.text('Locator'),
-        );
+        await tester.pump();
 
         expect(
           find.text('Locator'),
@@ -92,14 +107,10 @@ void main() {
       'displays SOS menu',
           (WidgetTester tester) async {
         await tester.pumpWidget(
-          const MaterialApp(
-            home: HomeScreen(),
-          ),
+          createTestApp(),
         );
 
-        await tester.ensureVisible(
-          find.text('SOS'),
-        );
+        await tester.pump();
 
         expect(
           find.text('SOS'),
@@ -112,10 +123,10 @@ void main() {
       'displays Settings button',
           (WidgetTester tester) async {
         await tester.pumpWidget(
-          const MaterialApp(
-            home: HomeScreen(),
-          ),
+          createTestApp(),
         );
+
+        await tester.pump();
 
         expect(
           find.byIcon(Icons.settings_outlined),

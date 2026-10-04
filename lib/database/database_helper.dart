@@ -12,7 +12,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 5,
+      version: 6,
 
       // =========================
       // CREATE DATABASE
@@ -58,6 +58,17 @@ class DatabaseHelper {
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           name TEXT NOT NULL,
           phone_number TEXT NOT NULL
+        )
+        ''');
+
+        // EVENT TRACKING
+        await db.execute('''
+        CREATE TABLE event_tracking (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          event_type TEXT NOT NULL,
+          event_timestamp TEXT NOT NULL,
+          person_id TEXT,
+          metadata TEXT
         )
         ''');
       },
@@ -134,6 +145,22 @@ class DatabaseHelper {
             longitude REAL NOT NULL,
             accuracy REAL NOT NULL,
             timestamp TEXT NOT NULL
+          )
+          ''');
+        }
+
+        // =========================
+        // VERSION 5 → VERSION 6
+        // =========================
+
+        if (oldVersion < 6) {
+          await db.execute('''
+          CREATE TABLE IF NOT EXISTS event_tracking (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            event_type TEXT NOT NULL,
+            event_timestamp TEXT NOT NULL,
+            person_id TEXT,
+            metadata TEXT
           )
           ''');
         }
@@ -367,5 +394,43 @@ class DatabaseHelper {
       where: 'id = ?',
       whereArgs: [id],
     );
+  }
+
+  // =========================
+  // EVENT TRACKING
+  // =========================
+
+  Future<int> insertEvent({
+    required String eventType,
+    required DateTime timestamp,
+    String? personId,
+    String? metadata,
+  }) async {
+    final Database db = await database;
+
+    return await db.insert(
+      'event_tracking',
+      {
+        'event_type': eventType,
+        'event_timestamp': timestamp.toIso8601String(),
+        'person_id': personId,
+        'metadata': metadata,
+      },
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> getEvents() async {
+    final Database db = await database;
+
+    return await db.query(
+      'event_tracking',
+      orderBy: 'event_timestamp DESC',
+    );
+  }
+
+  Future<void> deleteAllEvents() async {
+    final Database db = await database;
+
+    await db.delete('event_tracking');
   }
 }

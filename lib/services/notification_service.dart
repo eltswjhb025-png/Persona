@@ -2,6 +2,8 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 
+import 'notification_settings_service.dart';
+
 class NotificationService {
   static final FlutterLocalNotificationsPlugin notifications =
   FlutterLocalNotificationsPlugin();
@@ -24,23 +26,29 @@ class NotificationService {
       windows: windowsSettings,
     );
 
-    await notifications.initialize(settings: settings);
+    await notifications.initialize(
+      settings: settings,
+    );
   }
 
   static Future<void> showTestNotification() async {
+    final bool soundsEnabled =
+    await NotificationSettingsService.getReminderSoundsEnabled();
+
     await notifications.show(
       id: 0,
       title: 'Persona',
       body: 'This is a test birthday!',
-      notificationDetails: const NotificationDetails(
+      notificationDetails: NotificationDetails(
         android: AndroidNotificationDetails(
           'birthday_channel',
           'Birthday Reminders',
           channelDescription: 'Notifications for upcoming birthdays',
           importance: Importance.high,
           priority: Priority.high,
+          playSound: soundsEnabled,
         ),
-        windows: WindowsNotificationDetails(),
+        windows: const WindowsNotificationDetails(),
       ),
     );
   }
@@ -51,6 +59,9 @@ class NotificationService {
     required String body,
     required DateTime scheduledDate,
   }) async {
+    final bool soundsEnabled =
+    await NotificationSettingsService.getReminderSoundsEnabled();
+
     await notifications.zonedSchedule(
       id: id,
       title: title,
@@ -61,21 +72,23 @@ class NotificationService {
       ),
       androidScheduleMode:
       AndroidScheduleMode.inexactAllowWhileIdle,
-      notificationDetails: const NotificationDetails(
+      notificationDetails: NotificationDetails(
         android: AndroidNotificationDetails(
           'birthday_channel',
           'Birthday Reminders',
-          channelDescription:
-          'Notifications for upcoming birthdays',
+          channelDescription: 'Notifications for upcoming birthdays',
           importance: Importance.high,
           priority: Priority.high,
+          playSound: soundsEnabled,
         ),
-        windows: WindowsNotificationDetails(),
+        windows: const WindowsNotificationDetails(),
       ),
     );
   }
 
   static Future<void> cancelNotification(int id) async {
-    await notifications.cancel(id: id);
+    await notifications.cancel(
+      id: id,
+    );
   }
 }

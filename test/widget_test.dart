@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+
 import 'package:persona/main.dart';
 import 'package:persona/screens/login_screen.dart';
 import 'package:persona/services/theme_service.dart';
@@ -9,12 +10,12 @@ void main() {
     testWidgets(
       'creates the Persona application',
           (WidgetTester tester) async {
-        final ThemeService themeService =
-        ThemeService();
+        final ThemeService themeService = ThemeService();
 
         await tester.pumpWidget(
-          PersonaApp(
+          ThemeProvider(
             themeService: themeService,
+            child: const PersonaApp(),
           ),
         );
 
@@ -28,12 +29,12 @@ void main() {
     testWidgets(
       'displays the LoginScreen',
           (WidgetTester tester) async {
-        final ThemeService themeService =
-        ThemeService();
+        final ThemeService themeService = ThemeService();
 
         await tester.pumpWidget(
-          PersonaApp(
+          ThemeProvider(
             themeService: themeService,
+            child: const PersonaApp(),
           ),
         );
 
