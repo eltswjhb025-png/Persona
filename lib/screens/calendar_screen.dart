@@ -1,15 +1,16 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:googleapis/calendar/v3.dart' as calendar;
+import 'package:table_calendar/table_calendar.dart';
+
 import '../database/database_helper.dart';
 import '../models/calendar_event.dart';
 import '../models/person.dart';
-import '../services/notification_service.dart';
+import '../services/event_reminder_service.dart';
+import '../services/google_calendar_service.dart';
 import '../services/theme_service.dart';
 import 'add_calendar_event_screen.dart';
-import 'package:googleapis/calendar/v3.dart' as calendar;
-import '../services/google_calendar_service.dart';
-import 'package:table_calendar/table_calendar.dart';
 
 class CalendarScreen extends StatefulWidget {
   const CalendarScreen({super.key});
@@ -198,44 +199,34 @@ class _CalendarScreenState extends State<CalendarScreen> {
     return ClipRRect(
       borderRadius:
       BorderRadius.circular(borderRadius),
-
       child: BackdropFilter(
         filter: ImageFilter.blur(
           sigmaX: 14,
           sigmaY: 14,
         ),
-
         child: Container(
           padding: padding,
-
           decoration: BoxDecoration(
-            color:
-            isDarkMode
+            color: isDarkMode
                 ? Colors.black.withValues(
               alpha: 0.22,
             )
                 : Colors.white.withValues(
               alpha: 0.15,
             ),
-
             borderRadius:
             BorderRadius.circular(
               borderRadius,
             ),
-
             border: Border.all(
-              color:
-              Colors.white.withValues(
-                alpha:
-                isDarkMode
+              color: Colors.white.withValues(
+                alpha: isDarkMode
                     ? 0.16
                     : 0.28,
               ),
-
               width: 1,
             ),
           ),
-
           child: child,
         ),
       ),
@@ -254,59 +245,35 @@ class _CalendarScreenState extends State<CalendarScreen> {
     Widget? trailing,
   }) {
     return glassCard(
-      isDarkMode:
-      isDarkMode,
-
-      padding:
-      const EdgeInsets.all(12),
-
+      isDarkMode: isDarkMode,
+      padding: const EdgeInsets.all(12),
       borderRadius: 20,
-
       child: ListTile(
-        contentPadding:
-        EdgeInsets.zero,
-
-        leading:
-        leading,
-
+        contentPadding: EdgeInsets.zero,
+        leading: leading,
         title: Text(
           title,
-
-          style:
-          const TextStyle(
-            color:
-            Colors.white,
-            fontWeight:
-            FontWeight.bold,
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
             fontSize: 15,
           ),
         ),
-
-        subtitle:
-        Padding(
-          padding:
-          const EdgeInsets.only(
+        subtitle: Padding(
+          padding: const EdgeInsets.only(
             top: 4,
           ),
-
           child: Text(
             subtitle,
-
-            style:
-            TextStyle(
-              color:
-              Colors.white
-                  .withValues(
+            style: TextStyle(
+              color: Colors.white.withValues(
                 alpha: 0.72,
               ),
-
               height: 1.4,
             ),
           ),
         ),
-
-        trailing:
-        trailing,
+        trailing: trailing,
       ),
     );
   }
@@ -353,67 +320,49 @@ class _CalendarScreenState extends State<CalendarScreen> {
       appBar: AppBar(
         backgroundColor:
         Colors.transparent,
-
         elevation: 0,
-
         centerTitle: false,
-
         title: Row(
           children: [
             Container(
               padding:
               const EdgeInsets.all(9),
-
               decoration:
               BoxDecoration(
                 color:
-                Colors.white
-                    .withValues(
-                  alpha:
-                  isDarkMode
+                Colors.white.withValues(
+                  alpha: isDarkMode
                       ? 0.10
                       : 0.16,
                 ),
-
                 borderRadius:
                 BorderRadius.circular(
                   14,
                 ),
-
                 border:
                 Border.all(
                   color:
-                  Colors.white
-                      .withValues(
-                    alpha:
-                    isDarkMode
+                  Colors.white.withValues(
+                    alpha: isDarkMode
                         ? 0.15
                         : 0.25,
                   ),
                 ),
               ),
-
               child: const Icon(
                 Icons.calendar_month_outlined,
-                color:
-                Colors.white,
+                color: Colors.white,
                 size: 22,
               ),
             ),
-
             const SizedBox(
               width: 12,
             ),
-
             const Text(
               'Calendar',
-
-              style:
-              TextStyle(
-                color:
-                Colors.white,
-                fontWeight:
-                FontWeight.bold,
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
                 fontSize: 21,
               ),
             ),
@@ -432,10 +381,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
           LinearGradient(
             begin:
             Alignment.topLeft,
-
             end:
             Alignment.bottomRight,
-
             colors:
             isDarkMode
                 ? const [
@@ -450,10 +397,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
             ],
           ),
         ),
-
         child: SafeArea(
           top: false,
-
           child: ListView(
             padding:
             const EdgeInsets.fromLTRB(
@@ -462,42 +407,32 @@ class _CalendarScreenState extends State<CalendarScreen> {
               16,
               100,
             ),
-
             children: [
               // ==================================================
               // CALENDAR GLASS CARD
               // ==================================================
 
               glassCard(
-                isDarkMode:
-                isDarkMode,
-
+                isDarkMode: isDarkMode,
                 padding:
                 const EdgeInsets.symmetric(
                   vertical: 8,
                   horizontal: 4,
                 ),
-
                 borderRadius: 26,
-
                 child: SizedBox(
                   height: 430,
-
-                  child:
-                  TableCalendar(
+                  child: TableCalendar(
                     firstDay:
                     DateTime(1900),
-
                     lastDay:
                     DateTime(
                       DateTime.now().year + 10,
                       12,
                       31,
                     ),
-
                     focusedDay:
                     selectedDate,
-
                     selectedDayPredicate:
                         (day) {
                       return isSameDay(
@@ -505,10 +440,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
                         selectedDate,
                       );
                     },
-
                     onDaySelected:
-                        (selectedDay,
-                        focusedDay) async {
+                        (
+                        selectedDay,
+                        focusedDay,
+                        ) async {
                       final bool yearChanged =
                           selectedDay.year !=
                               selectedDate.year;
@@ -529,36 +465,27 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
                     headerStyle:
                     HeaderStyle(
-                      titleCentered:
-                      true,
-
+                      titleCentered: true,
                       titleTextStyle:
                       TextStyle(
                         color:
                         calendarTextColor,
-
                         fontSize: 18,
-
                         fontWeight:
                         FontWeight.bold,
                       ),
-
                       leftChevronIcon:
                       Icon(
                         Icons.chevron_left,
-
                         color:
                         calendarTextColor,
                       ),
-
                       rightChevronIcon:
                       Icon(
                         Icons.chevron_right,
-
                         color:
                         calendarTextColor,
                       ),
-
                       formatButtonVisible:
                       false,
                     ),
@@ -576,11 +503,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
                             .withValues(
                           alpha: 0.7,
                         ),
-
                         fontWeight:
                         FontWeight.w600,
                       ),
-
                       weekendStyle:
                       TextStyle(
                         color:
@@ -588,7 +513,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
                             .withValues(
                           alpha: 0.7,
                         ),
-
                         fontWeight:
                         FontWeight.w600,
                       ),
@@ -602,70 +526,52 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     CalendarStyle(
                       todayDecoration:
                       BoxDecoration(
-                        color:
-                        oliveDrab,
-
+                        color: oliveDrab,
                         shape:
                         BoxShape.circle,
-
                         border:
                         Border.all(
                           color:
                           Colors.white,
-
                           width: 2,
                         ),
                       ),
-
                       selectedDecoration:
                       const BoxDecoration(
-                        color:
-                        darkOlive,
-
+                        color: darkOlive,
                         shape:
                         BoxShape.circle,
                       ),
-
                       defaultTextStyle:
                       TextStyle(
                         color:
                         calendarTextColor,
-
                         fontWeight:
                         FontWeight.w500,
                       ),
-
                       weekendTextStyle:
                       TextStyle(
                         color:
                         calendarTextColor,
-
                         fontWeight:
                         FontWeight.w500,
                       ),
-
                       outsideTextStyle:
                       TextStyle(
                         color:
                         calendarOutsideTextColor,
                       ),
-
                       disabledTextStyle:
                       TextStyle(
                         color:
                         calendarOutsideTextColor,
                       ),
-
                       markerDecoration:
                       const BoxDecoration(
-                        color:
-                        olive,
-
+                        color: olive,
                         shape:
                         BoxShape.circle,
                       ),
-
-                      // Theme-aware calendar surface.
                       defaultDecoration:
                       BoxDecoration(
                         color:
@@ -723,15 +629,12 @@ class _CalendarScreenState extends State<CalendarScreen> {
                           margin:
                           const EdgeInsets
                               .all(4),
-
                           decoration:
                           BoxDecoration(
                             color:
                             backgroundColor,
-
                             shape:
                             BoxShape.circle,
-
                             boxShadow: [
                               BoxShadow(
                                 color:
@@ -739,27 +642,18 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                     .withValues(
                                   alpha: 0.35,
                                 ),
-
-                                blurRadius:
-                                5,
-
-                                spreadRadius:
-                                1,
+                                blurRadius: 5,
+                                spreadRadius: 1,
                               ),
                             ],
                           ),
-
-                          child:
-                          Center(
-                            child:
-                            Text(
+                          child: Center(
+                            child: Text(
                               '${day.day}',
-
                               style:
                               const TextStyle(
                                 color:
                                 Colors.white,
-
                                 fontWeight:
                                 FontWeight.bold,
                               ),
@@ -781,90 +675,68 @@ class _CalendarScreenState extends State<CalendarScreen> {
               // ==================================================
 
               glassCard(
-                isDarkMode:
-                isDarkMode,
-
+                isDarkMode: isDarkMode,
                 padding:
                 const EdgeInsets.all(
                   18,
                 ),
-
                 borderRadius: 22,
-
                 child: Row(
                   children: [
                     Container(
                       padding:
-                      const EdgeInsets
-                          .all(12),
-
+                      const EdgeInsets.all(
+                        12,
+                      ),
                       decoration:
                       BoxDecoration(
-                        color:
-                        Colors.white
+                        color: Colors.white
                             .withValues(
-                          alpha:
-                          isDarkMode
+                          alpha: isDarkMode
                               ? 0.10
                               : 0.18,
                         ),
-
                         shape:
                         BoxShape.circle,
                       ),
-
-                      child:
-                      const Icon(
+                      child: const Icon(
                         Icons.today_outlined,
-
                         color:
                         Colors.white,
-
                         size: 25,
                       ),
                     ),
-
                     const SizedBox(
                       width: 14,
                     ),
-
                     Column(
                       crossAxisAlignment:
                       CrossAxisAlignment
                           .start,
-
                       children: [
                         Text(
                           'Selected Date',
-
                           style:
                           TextStyle(
-                            color:
-                            Colors.white
+                            color: Colors.white
                                 .withValues(
                               alpha: 0.7,
                             ),
-
                             fontSize: 13,
                           ),
                         ),
-
                         const SizedBox(
                           height: 3,
                         ),
-
                         Text(
                           '${selectedDate.day}/'
                               '${selectedDate.month}/'
                               '${selectedDate.year}',
-
                           style:
                           const TextStyle(
                             color:
                             Colors.white,
-
                             fontSize: 21,
-
                             fontWeight:
                             FontWeight.bold,
                           ),
@@ -885,14 +757,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
               const Text(
                 'Events & Birthdays',
-
-                style:
-                TextStyle(
-                  color:
-                  Colors.white,
-
+                style: TextStyle(
+                  color: Colors.white,
                   fontSize: 21,
-
                   fontWeight:
                   FontWeight.bold,
                 ),
@@ -904,15 +771,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
               Text(
                 'Everything happening on this date',
-
-                style:
-                TextStyle(
+                style: TextStyle(
                   color:
-                  Colors.white
-                      .withValues(
+                  Colors.white.withValues(
                     alpha: 0.7,
                   ),
-
                   fontSize: 13,
                 ),
               ),
@@ -939,91 +802,66 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   selectedHolidays =
                   getGoogleHolidaysForSelectedDate();
 
-                  // ==================================================
-                  // NO EVENTS
-                  // ==================================================
-
                   if (selectedEvents.isEmpty &&
                       selectedBirthdays.isEmpty &&
                       selectedHolidays.isEmpty) {
                     return glassCard(
                       isDarkMode:
                       isDarkMode,
-
                       padding:
                       const EdgeInsets
                           .symmetric(
                         vertical: 30,
                         horizontal: 20,
                       ),
-
-                      borderRadius:
-                      22,
-
+                      borderRadius: 22,
                       child: Column(
                         children: [
                           Container(
                             padding:
                             const EdgeInsets
                                 .all(16),
-
                             decoration:
                             BoxDecoration(
-                              color:
-                              Colors.white
+                              color: Colors.white
                                   .withValues(
-                                alpha:
-                                isDarkMode
+                                alpha: isDarkMode
                                     ? 0.10
                                     : 0.15,
                               ),
-
                               shape:
                               BoxShape.circle,
                             ),
-
-                            child:
-                            const Icon(
+                            child: const Icon(
                               Icons
                                   .event_available,
-
                               size: 40,
-
                               color:
                               Colors.white,
                             ),
                           ),
-
                           const SizedBox(
                             height: 14,
                           ),
-
                           const Text(
                             'No events for this date',
-
                             style:
                             TextStyle(
                               color:
                               Colors.white,
-
                               fontSize: 16,
-
                               fontWeight:
                               FontWeight.w600,
                             ),
                           ),
-
                           const SizedBox(
                             height: 5,
                           ),
-
                           Text(
                             'Your calendar is clear.',
-
                             style:
                             TextStyle(
-                              color:
-                              Colors.white
+                              color: Colors.white
                                   .withValues(
                                 alpha: 0.65,
                               ),
@@ -1041,42 +879,39 @@ class _CalendarScreenState extends State<CalendarScreen> {
                       // ==================================================
 
                       ...selectedHolidays.map(
-                            (calendar.Event holiday) {
+                            (
+                            calendar.Event holiday,
+                            ) {
                           return Padding(
                             padding:
                             const EdgeInsets
                                 .only(
                               bottom: 12,
                             ),
-
                             child:
                             buildEventCard(
                               isDarkMode:
                               isDarkMode,
-
                               leading:
                               CircleAvatar(
                                 backgroundColor:
                                 isDarkMode
                                     ? oliveDrab
-                                    : Colors.white,
-
-                                child:
-                                Icon(
+                                    : Colors
+                                    .white,
+                                child: Icon(
                                   Icons
                                       .flag_outlined,
-
                                   color:
                                   isDarkMode
-                                      ? Colors.white
+                                      ? Colors
+                                      .white
                                       : darkOlive,
                                 ),
                               ),
-
                               title:
                               holiday.summary ??
                                   'South African Holiday',
-
                               subtitle:
                               'South African Holiday',
                             ),
@@ -1096,34 +931,29 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                 .only(
                               bottom: 12,
                             ),
-
                             child:
                             buildEventCard(
                               isDarkMode:
                               isDarkMode,
-
                               leading:
                               CircleAvatar(
                                 backgroundColor:
                                 isDarkMode
                                     ? oliveDrab
-                                    : Colors.white,
-
-                                child:
-                                Icon(
+                                    : Colors
+                                    .white,
+                                child: Icon(
                                   Icons
                                       .cake_outlined,
-
                                   color:
                                   isDarkMode
-                                      ? Colors.white
+                                      ? Colors
+                                      .white
                                       : darkOlive,
                                 ),
                               ),
-
                               title:
                               '${person.name}\'s Birthday',
-
                               subtitle:
                               'Birthday',
                             ),
@@ -1143,56 +973,49 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                 .only(
                               bottom: 12,
                             ),
-
                             child:
                             buildEventCard(
                               isDarkMode:
                               isDarkMode,
-
                               leading:
                               CircleAvatar(
                                 backgroundColor:
                                 isDarkMode
                                     ? oliveDrab
-                                    : Colors.white,
-
-                                child:
-                                Icon(
+                                    : Colors
+                                    .white,
+                                child: Icon(
                                   event.reminder
                                       ? Icons
                                       .notifications_outlined
                                       : Icons
                                       .event_outlined,
-
                                   color:
                                   isDarkMode
-                                      ? Colors.white
+                                      ? Colors
+                                      .white
                                       : darkOlive,
                                 ),
                               ),
-
                               title:
                               event.title,
-
                               subtitle:
                               '${event.date.hour.toString().padLeft(2, '0')}:'
                                   '${event.date.minute.toString().padLeft(2, '0')}'
                                   '${event.description != null ? '\n${event.description}' : ''}',
-
                               trailing:
                               Row(
                                 mainAxisSize:
-                                MainAxisSize.min,
-
+                                MainAxisSize
+                                    .min,
                                 children: [
-                                  if (event.reminder)
+                                  if (event
+                                      .reminder)
                                     const Icon(
                                       Icons
                                           .notifications_active_outlined,
-
-                                      color:
-                                      Colors.white,
-
+                                      color: Colors
+                                          .white,
                                       size: 20,
                                     ),
 
@@ -1205,11 +1028,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                     const Icon(
                                       Icons
                                           .edit_outlined,
-
-                                      color:
-                                      Colors.white,
+                                      color: Colors
+                                          .white,
                                     ),
-
                                     onPressed:
                                         () async {
                                       final CalendarEvent?
@@ -1217,7 +1038,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                       await Navigator.push<
                                           CalendarEvent>(
                                         context,
-
                                         MaterialPageRoute(
                                           builder:
                                               (context) =>
@@ -1233,38 +1053,15 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                         return;
                                       }
 
-                                      await NotificationService
-                                          .cancelNotification(
-                                        event.id.hashCode,
-                                      );
-
                                       await databaseHelper
                                           .updateCalendarEvent(
                                         updatedEvent,
                                       );
 
-                                      if (updatedEvent
-                                          .reminder) {
-                                        await NotificationService
-                                            .scheduleNotification(
-                                          id: updatedEvent
-                                              .id
-                                              .hashCode,
-
-                                          title:
-                                          updatedEvent
-                                              .title,
-
-                                          body:
-                                          updatedEvent
-                                              .description ??
-                                              'Calendar event reminder',
-
-                                          scheduledDate:
-                                          updatedEvent
-                                              .date,
-                                        );
-                                      }
+                                      await EventReminderService
+                                          .refreshEventReminder(
+                                        updatedEvent,
+                                      );
 
                                       await loadEvents();
                                     },
@@ -1279,11 +1076,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                     const Icon(
                                       Icons
                                           .delete_outline,
-
-                                      color:
-                                      Colors.white,
+                                      color: Colors
+                                          .white,
                                     ),
-
                                     onPressed:
                                         () async {
                                       final bool?
@@ -1292,7 +1087,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                           bool>(
                                         context:
                                         context,
-
                                         builder:
                                             (context) {
                                           return AlertDialog(
@@ -1300,7 +1094,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                             isDarkMode
                                                 ? darkCard
                                                 : lightCream,
-
                                             shape:
                                             RoundedRectangleBorder(
                                               borderRadius:
@@ -1308,38 +1101,32 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                                 22,
                                               ),
                                             ),
-
                                             title:
                                             Text(
                                               'Delete Event?',
-
                                               style:
                                               TextStyle(
-                                                color:
-                                                isDarkMode
-                                                    ? Colors.white
+                                                color: isDarkMode
+                                                    ? Colors
+                                                    .white
                                                     : darkOlive,
-
                                                 fontWeight:
                                                 FontWeight.bold,
                                               ),
                                             ),
-
                                             content:
                                             Text(
                                               'Are you sure you want '
                                                   'to delete '
                                                   '"${event.title}"?',
-
                                               style:
                                               TextStyle(
-                                                color:
-                                                isDarkMode
-                                                    ? Colors.white
+                                                color: isDarkMode
+                                                    ? Colors
+                                                    .white
                                                     : darkOlive,
                                               ),
                                             ),
-
                                             actions: [
                                               TextButton(
                                                 onPressed:
@@ -1349,32 +1136,25 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                                     false,
                                                   );
                                                 },
-
                                                 child:
                                                 Text(
                                                   'Cancel',
-
                                                   style:
                                                   TextStyle(
-                                                    color:
-                                                    isDarkMode
+                                                    color: isDarkMode
                                                         ? oliveDrab
                                                         : darkOlive,
                                                   ),
                                                 ),
                                               ),
-
                                               ElevatedButton(
                                                 style:
                                                 ElevatedButton.styleFrom(
-                                                  backgroundColor:
-                                                  isDarkMode
+                                                  backgroundColor: isDarkMode
                                                       ? oliveDrab
                                                       : olive,
-
                                                   foregroundColor:
                                                   Colors.white,
-
                                                   shape:
                                                   RoundedRectangleBorder(
                                                     borderRadius:
@@ -1383,7 +1163,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                                     ),
                                                   ),
                                                 ),
-
                                                 onPressed:
                                                     () {
                                                   Navigator.pop(
@@ -1391,7 +1170,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                                     true,
                                                   );
                                                 },
-
                                                 child:
                                                 const Text(
                                                   'Delete',
@@ -1407,9 +1185,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                         return;
                                       }
 
-                                      await NotificationService
-                                          .cancelNotification(
-                                        event.id.hashCode,
+                                      await EventReminderService
+                                          .cancelEventReminder(
+                                        event,
                                       );
 
                                       await databaseHelper
@@ -1443,51 +1221,35 @@ class _CalendarScreenState extends State<CalendarScreen> {
       Container(
         decoration:
         BoxDecoration(
-          shape:
-          BoxShape.circle,
-
+          shape: BoxShape.circle,
           boxShadow: [
             BoxShadow(
-              color:
-              darkOlive.withValues(
+              color: darkOlive.withValues(
                 alpha: 0.35,
               ),
-
-              blurRadius:
-              12,
-
-              spreadRadius:
-              2,
+              blurRadius: 12,
+              spreadRadius: 2,
             ),
           ],
         ),
-
         child:
         FloatingActionButton(
           backgroundColor:
           isDarkMode
               ? oliveDrab
               : Colors.white,
-
           foregroundColor:
           isDarkMode
               ? Colors.white
               : darkOlive,
-
-          elevation:
-          4,
-
-          onPressed:
-              () async {
-            final CalendarEvent?
-            event =
+          elevation: 4,
+          onPressed: () async {
+            final CalendarEvent? event =
             await Navigator.push<
                 CalendarEvent>(
               context,
-
               MaterialPageRoute(
-                builder:
-                    (context) =>
+                builder: (context) =>
                 const AddCalendarEventScreen(),
               ),
             );
@@ -1501,29 +1263,14 @@ class _CalendarScreenState extends State<CalendarScreen> {
               event,
             );
 
-            if (event.reminder) {
-              await NotificationService
-                  .scheduleNotification(
-                id:
-                event.id.hashCode,
-
-                title:
-                event.title,
-
-                body:
-                event.description ??
-                    'Calendar event reminder',
-
-                scheduledDate:
-                event.date,
-              );
-            }
+            await EventReminderService
+                .scheduleEventReminder(
+              event,
+            );
 
             await loadEvents();
           },
-
-          child:
-          const Icon(
+          child: const Icon(
             Icons.add,
             size: 28,
           ),

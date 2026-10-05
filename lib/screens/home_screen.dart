@@ -1,10 +1,12 @@
 import 'dart:ui';
 
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:googleapis/calendar/v3.dart' as calendar;
 
 import '../database/database_helper.dart';
 import '../models/person.dart';
+import '../models/calendar_event.dart';
 import '../services/google_calendar_service.dart';
 import '../services/theme_service.dart';
 
@@ -15,103 +17,150 @@ import 'locator_screen.dart';
 import 'settings_screen.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  final bool loadData;
+
+  const HomeScreen({
+    super.key,
+    this.loadData = true,
+  });
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  // ============================================================
-  // Persona Colors
-  // ============================================================
-
   static const Color oliveDrab = Color(0xFF6B8E23);
   static const Color olive = Color(0xFF808000);
   static const Color darkOlive = Color(0xFF3F4A16);
   static const Color lightCream = Color(0xFFF4F5E9);
-
   static const Color darkBackground = Color(0xFF1E2412);
   static const Color darkCard = Color(0xFF2B321B);
 
-  // ============================================================
-  // Database
-  // ============================================================
-
   final DatabaseHelper databaseHelper = DatabaseHelper();
 
-  // ============================================================
-  // Upcoming Event State
-  // ============================================================
+  String _profileName = 'Persona User';
 
   bool isLoadingUpcoming = true;
 
-  UpcomingEvent? upcomingEvent;
+  List<UpcomingEvent> upcomingEvents = [];
 
-  // ============================================================
-  // INIT
-  // ============================================================
+  final PageController _upcomingPageController =
+  PageController();
+
+  int _currentUpcomingPage = 0;
 
   @override
   void initState() {
     super.initState();
-    loadUpcomingEvent();
+
+    if (widget.loadData) {
+      loadProfileName();
+      loadUpcomingEvent();
+    } else {
+      isLoadingUpcoming = false;
+    }
   }
 
-  // ============================================================
-  // LOAD UPCOMING EVENT
-  // ============================================================
+  @override
+  void dispose() {
+    _upcomingPageController.dispose();
+    super.dispose();
+  }
+
+  // ==========================================================
+  // PROFILE NAME
+  // ==========================================================
+
+  Future<void> loadProfileName() async {
+    final User? user =
+        FirebaseAuth.instance.currentUser;
+
+    final String name =
+        user?.displayName?.trim() ?? '';
+
+    if (!mounted) return;
+
+    setState(() {
+      _profileName =
+      name.isNotEmpty ? name : 'Persona User';
+    });
+  }
+
+  // ==========================================================
+  // UPCOMING EVENTS
+  // ==========================================================
 
   Future<void> loadUpcomingEvent() async {
+    if (mounted) {
+      setState(() {
+        isLoadingUpcoming = true;
+      });
+    }
+
     try {
       final DateTime now = DateTime.now();
 
-      // ----------------------------------------------------------
-      // Load Persona birthdays
-      // ----------------------------------------------------------
+      final DateTime today = DateTime(
+        now.year,
+        now.month,
+        now.day,
+      );
+
+      final DateTime threeDaysFromNow =
+      today.add(
+        const Duration(days: 3),
+      );
+
+      final DateTime endDate = DateTime(
+        threeDaysFromNow.year,
+        threeDaysFromNow.month,
+        threeDaysFromNow.day,
+        23,
+        59,
+        59,
+      );
+
+      final List<UpcomingEvent> possibleEvents =
+      [];
+
+      // ========================================================
+      // BIRTHDAYS
+      // ========================================================
 
       final List<Person> people =
       await databaseHelper.getPeople();
 
-      final List<UpcomingEvent> possibleEvents = [];
-
       for (final Person person in people) {
         final UpcomingEvent? birthday =
-        _getNextBirthday(person, now);
+        _getNextBirthday(
+          person,
+          today,
+          threeDaysFromNow,
+        );
 
         if (birthday != null) {
           possibleEvents.add(birthday);
         }
       }
 
-      // ----------------------------------------------------------
-      // Load Google Calendar events
-      // ----------------------------------------------------------
+      // ========================================================
+      // LOCAL CALENDAR EVENTS
+      // ========================================================
 
-      final DateTime calendarEnd =
-      now.add(const Duration(days: 365));
+      final List<CalendarEvent> localEvents =
+      await databaseHelper.getCalendarEvents();
 
-      final List<calendar.Event> googleEvents =
-      await GoogleCalendarService.getUpcomingEvents(
-        startDate: now,
-        endDate: calendarEnd,
-      );
+      for (final CalendarEvent event in localEvents) {
+        final DateTime eventDate = event.date;
 
-      for (final calendar.Event event in googleEvents) {
-        final DateTime? eventDate =
-        _getGoogleEventDate(event);
-
-        if (eventDate == null) {
-          continue;
-        }
-
-        if (eventDate.isBefore(now)) {
+        if (eventDate.isBefore(now) ||
+            eventDate.isAfter(endDate)) {
           continue;
         }
 
         possibleEvents.add(
           UpcomingEvent(
-            title: event.summary ?? 'Calendar Event',
+            title: event.title,
             date: eventDate,
             icon: Icons.calendar_month_outlined,
             isBirthday: false,
@@ -119,55 +168,119 @@ class _HomeScreenState extends State<HomeScreen> {
         );
       }
 
-      // ----------------------------------------------------------
-      // Find nearest event
-      // ----------------------------------------------------------
+      // ========================================================
+      // GOOGLE CALENDAR EVENTS
+      // ========================================================
+
+      try {
+        final List<calendar.Event> googleEvents =
+        await GoogleCalendarService
+            .getUpcomingEvents(
+          startDate: today,
+          endDate: endDate,
+        );
+
+        for (final calendar.Event event
+        in googleEvents) {
+          final DateTime? eventDate =
+          _getGoogleEventDate(event);
+
+          if (eventDate == null) {
+            continue;
+          }
+
+          if (event.start?.date != null) {
+            final DateTime eventDay =
+            DateTime(
+              eventDate.year,
+              eventDate.month,
+              eventDate.day,
+            );
+
+            if (eventDay.isBefore(today) ||
+                eventDay.isAfter(
+                  threeDaysFromNow,
+                )) {
+              continue;
+            }
+          } else {
+            if (eventDate.isBefore(now) ||
+                eventDate.isAfter(endDate)) {
+              continue;
+            }
+          }
+
+          possibleEvents.add(
+            UpcomingEvent(
+              title:
+              event.summary ??
+                  'Calendar Event',
+              date: eventDate,
+              icon:
+              Icons.calendar_month_outlined,
+              isBirthday: false,
+            ),
+          );
+        }
+      } catch (e) {
+        debugPrint(
+          'GOOGLE CALENDAR ERROR: $e',
+        );
+      }
+
+      // ========================================================
+      // SORT EVENTS
+      // ========================================================
 
       possibleEvents.sort(
             (UpcomingEvent a, UpcomingEvent b) =>
             a.date.compareTo(b.date),
       );
 
-      if (!mounted) {
-        return;
-      }
+      if (!mounted) return;
 
       setState(() {
-        upcomingEvent = possibleEvents.isEmpty
-            ? null
-            : possibleEvents.first;
+        upcomingEvents = possibleEvents;
 
         isLoadingUpcoming = false;
+
+        if (upcomingEvents.isEmpty) {
+          _currentUpcomingPage = 0;
+        } else if (_currentUpcomingPage >=
+            upcomingEvents.length) {
+          _currentUpcomingPage =
+              upcomingEvents.length - 1;
+        }
       });
     } catch (e) {
       debugPrint(
         'HOME UPCOMING EVENT ERROR: $e',
       );
 
-      if (!mounted) {
-        return;
-      }
+      if (!mounted) return;
 
       setState(() {
-        upcomingEvent = null;
+        upcomingEvents = [];
         isLoadingUpcoming = false;
+        _currentUpcomingPage = 0;
       });
     }
   }
 
-  // ============================================================
+  // ==========================================================
   // NEXT BIRTHDAY
-  // ============================================================
+  // ==========================================================
 
   UpcomingEvent? _getNextBirthday(
       Person person,
-      DateTime now,
+      DateTime today,
+      DateTime threeDaysFromNow,
       ) {
     DateTime birthdayThisYear;
 
     try {
       birthdayThisYear = DateTime(
-        now.year,
+        today.year,
         person.birthday.month,
         person.birthday.day,
       );
@@ -175,27 +288,32 @@ class _HomeScreenState extends State<HomeScreen> {
       return null;
     }
 
-    DateTime nextBirthday = birthdayThisYear;
-
-    if (nextBirthday.isBefore(now)) {
-      nextBirthday = DateTime(
-        now.year + 1,
+    if (birthdayThisYear.isBefore(today)) {
+      birthdayThisYear = DateTime(
+        today.year + 1,
         person.birthday.month,
         person.birthday.day,
       );
     }
 
+    if (birthdayThisYear.isAfter(
+      threeDaysFromNow,
+    )) {
+      return null;
+    }
+
     return UpcomingEvent(
-      title: "${person.name}'s Birthday",
-      date: nextBirthday,
+      title:
+      "${person.name}'s Birthday",
+      date: birthdayThisYear,
       icon: Icons.cake_outlined,
       isBirthday: true,
     );
   }
 
-  // ============================================================
+  // ==========================================================
   // GOOGLE EVENT DATE
-  // ============================================================
+  // ==========================================================
 
   DateTime? _getGoogleEventDate(
       calendar.Event event,
@@ -222,9 +340,9 @@ class _HomeScreenState extends State<HomeScreen> {
     return null;
   }
 
-  // ============================================================
+  // ==========================================================
   // BUILD
-  // ============================================================
+  // ==========================================================
 
   @override
   Widget build(BuildContext context) {
@@ -236,20 +354,18 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       extendBodyBehindAppBar: true,
-
-      backgroundColor: isDarkMode
+      backgroundColor:
+      isDarkMode
           ? darkBackground
           : lightCream,
-
       appBar: _buildAppBar(context),
-
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-
-            colors: isDarkMode
+            colors:
+            isDarkMode
                 ? const [
               darkOlive,
               darkCard,
@@ -262,19 +378,19 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
         ),
-
         child: SafeArea(
           child: RefreshIndicator(
-            onRefresh: loadUpcomingEvent,
-
+            onRefresh: () async {
+              await loadProfileName();
+              await loadUpcomingEvent();
+            },
             color: oliveDrab,
-
             child: SingleChildScrollView(
-              physics: const BouncingScrollPhysics(
+              physics:
+              const BouncingScrollPhysics(
                 parent:
                 AlwaysScrollableScrollPhysics(),
               ),
-
               padding:
               const EdgeInsets.fromLTRB(
                 20,
@@ -282,41 +398,35 @@ class _HomeScreenState extends State<HomeScreen> {
                 20,
                 30,
               ),
-
               child: Column(
                 crossAxisAlignment:
                 CrossAxisAlignment.start,
-
                 children: [
-                  // --------------------------------------------------
-                  // WELCOME
-                  // --------------------------------------------------
-
                   _buildWelcomeSection(),
 
-                  const SizedBox(height: 25),
-
-                  // --------------------------------------------------
-                  // UPCOMING EVENT
-                  // --------------------------------------------------
+                  const SizedBox(
+                    height: 25,
+                  ),
 
                   _buildUpcomingEvent(
                     isDarkMode,
                   ),
 
-                  const SizedBox(height: 10),
-
-                  // --------------------------------------------------
-                  // EVENT INDICATORS
-                  // --------------------------------------------------
+                  const SizedBox(
+                    height: 10,
+                  ),
 
                   _buildEventIndicators(),
 
-                  const SizedBox(height: 28),
+                  const SizedBox(
+                    height: 18,
+                  ),
 
-                  // --------------------------------------------------
-                  // YOUR PERSONA
-                  // --------------------------------------------------
+                  _buildAnimeGif(),
+
+                  const SizedBox(
+                    height: 28,
+                  ),
 
                   _buildSectionTitle(
                     title: 'Your Persona',
@@ -324,137 +434,125 @@ class _HomeScreenState extends State<HomeScreen> {
                     'Stay connected to what matters.',
                   ),
 
-                  const SizedBox(height: 15),
-
-                  // --------------------------------------------------
-                  // BIRTHDAYS
-                  // --------------------------------------------------
+                  const SizedBox(
+                    height: 15,
+                  ),
 
                   _buildFeatureCard(
                     context,
-
-                    isDarkMode: isDarkMode,
-
-                    icon: Icons.cake_outlined,
+                    isDarkMode:
+                    isDarkMode,
+                    icon:
+                    Icons.cake_outlined,
                     title: 'Birthdays',
                     subtitle:
                     'Never miss an important birthday',
                     iconColor: oliveDrab,
-
                     onTap: () async {
                       await Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) =>
+                          builder:
+                              (context) =>
                           const BirthdaysScreen(),
                         ),
                       );
 
                       if (mounted) {
-                        loadUpcomingEvent();
+                        await loadUpcomingEvent();
                       }
                     },
                   ),
 
-                  const SizedBox(height: 14),
-
-                  // --------------------------------------------------
-                  // CALENDAR
-                  // --------------------------------------------------
+                  const SizedBox(
+                    height: 14,
+                  ),
 
                   _buildFeatureCard(
                     context,
-
-                    isDarkMode: isDarkMode,
-
+                    isDarkMode:
+                    isDarkMode,
                     icon:
                     Icons.calendar_month_outlined,
                     title: 'Calendar',
                     subtitle:
                     'Keep track of your important events',
                     iconColor: olive,
-
                     onTap: () async {
                       await Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) =>
+                          builder:
+                              (context) =>
                           const CalendarScreen(),
                         ),
                       );
 
                       if (mounted) {
-                        loadUpcomingEvent();
+                        await loadUpcomingEvent();
                       }
                     },
                   ),
 
-                  const SizedBox(height: 14),
-
-                  // --------------------------------------------------
-                  // LOCATOR
-                  // --------------------------------------------------
+                  const SizedBox(
+                    height: 14,
+                  ),
 
                   _buildFeatureCard(
                     context,
-
-                    isDarkMode: isDarkMode,
-
+                    isDarkMode:
+                    isDarkMode,
                     icon:
                     Icons.location_on_outlined,
                     title: 'Locator',
                     subtitle:
                     'Find and share your location',
                     iconColor: darkOlive,
-
                     onTap: () {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) =>
+                          builder:
+                              (context) =>
                           const LocatorScreen(),
                         ),
                       );
                     },
                   ),
 
-                  const SizedBox(height: 14),
-
-                  // --------------------------------------------------
-                  // SOS
-                  // --------------------------------------------------
+                  const SizedBox(
+                    height: 14,
+                  ),
 
                   _buildFeatureCard(
                     context,
-
-                    isDarkMode: isDarkMode,
-
-                    icon: Icons.sos_outlined,
+                    isDarkMode:
+                    isDarkMode,
+                    icon:
+                    Icons.sos_outlined,
                     title: 'SOS',
                     subtitle:
                     'Emergency assistance when you need it',
-
                     iconColor:
-                    const Color(0xFFB94A48),
-
+                    const Color(
+                      0xFFB94A48,
+                    ),
                     onTap: () {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) =>
+                          builder:
+                              (context) =>
                           const SOSScreen(),
                         ),
                       );
                     },
-
                     isEmergency: true,
                   ),
 
-                  const SizedBox(height: 28),
-
-                  // --------------------------------------------------
-                  // BRANDING
-                  // --------------------------------------------------
+                  const SizedBox(
+                    height: 28,
+                  ),
 
                   _buildBottomBranding(),
                 ],
@@ -466,9 +564,9 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ============================================================
+  // ==========================================================
   // APP BAR
-  // ============================================================
+  // ==========================================================
 
   PreferredSizeWidget _buildAppBar(
       BuildContext context,
@@ -476,66 +574,38 @@ class _HomeScreenState extends State<HomeScreen> {
     return AppBar(
       backgroundColor: Colors.transparent,
       elevation: 0,
-      centerTitle: false,
-
-      title: Row(
-        children: [
-          Container(
-            height: 42,
-            width: 42,
-
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(
-                alpha: 0.18,
-              ),
-
-              shape: BoxShape.circle,
-
-              border: Border.all(
-                color: Colors.white.withValues(
-                  alpha: 0.30,
-                ),
-              ),
-            ),
-
-            child: const Icon(
-              Icons.spa_outlined,
-              color: Colors.white,
-              size: 24,
-            ),
-          ),
-
-          const SizedBox(width: 12),
-
-          const Text(
-            'Persona',
-
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 22,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.2,
-            ),
-          ),
-        ],
+      scrolledUnderElevation: 0,
+      automaticallyImplyLeading: false,
+      leading: Padding(
+        padding: const EdgeInsets.only(
+          left: 20,
+          top: 6,
+        ),
+        child: _buildPersonaLogo(),
       ),
-
       actions: [
         Padding(
-          padding:
-          const EdgeInsets.only(right: 14),
-
+          padding: const EdgeInsets.only(
+            right: 20,
+            top: 6,
+          ),
           child: _buildGlassIconButton(
-            icon: Icons.settings_outlined,
-
-            onTap: () {
-              Navigator.push(
+            icon:
+            Icons.settings_outlined,
+            onTap: () async {
+              await Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) =>
+                  builder:
+                      (context) =>
                   const SettingsScreen(),
                 ),
               );
+
+              if (mounted) {
+                await loadProfileName();
+                await loadUpcomingEvent();
+              }
             },
           ),
         ),
@@ -543,31 +613,60 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ============================================================
+  // ==========================================================
+  // PERSONA LOGO
+  // ==========================================================
+
+  Widget _buildPersonaLogo() {
+    return Container(
+      height: 44,
+      width: 44,
+      decoration: BoxDecoration(
+        color:
+        Colors.white.withValues(
+          alpha: 0.15,
+        ),
+        shape: BoxShape.circle,
+        border: Border.all(
+          color:
+          Colors.white.withValues(
+            alpha: 0.25,
+          ),
+          width: 1,
+        ),
+      ),
+      child: const Icon(
+        Icons.spa_outlined,
+        color: Colors.white,
+        size: 23,
+      ),
+    );
+  }
+
+  // ==========================================================
   // WELCOME SECTION
-  // ============================================================
+  // ==========================================================
 
   Widget _buildWelcomeSection() {
     return Column(
       crossAxisAlignment:
       CrossAxisAlignment.start,
-
       children: [
-        const Text(
-          'Welcome back 👋',
-
-          style: TextStyle(
+        Text(
+          'Welcome, $_profileName 👋',
+          style: const TextStyle(
             color: Colors.white70,
             fontSize: 16,
             fontWeight: FontWeight.w500,
           ),
         ),
 
-        const SizedBox(height: 7),
+        const SizedBox(
+          height: 7,
+        ),
 
         const Text(
           'Your world,\nall in one place.',
-
           style: TextStyle(
             color: Colors.white,
             fontSize: 34,
@@ -577,13 +676,15 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
 
-        const SizedBox(height: 12),
+        const SizedBox(
+          height: 12,
+        ),
 
         Text(
           'Birthdays, events, location and emergency support.',
-
           style: TextStyle(
-            color: Colors.white.withValues(
+            color:
+            Colors.white.withValues(
               alpha: 0.78,
             ),
             fontSize: 15,
@@ -594,9 +695,9 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ============================================================
-  // UPCOMING EVENT
-  // ============================================================
+  // ==========================================================
+  // UPCOMING EVENT CARD
+  // ==========================================================
 
   Widget _buildUpcomingEvent(
       bool isDarkMode,
@@ -604,16 +705,13 @@ class _HomeScreenState extends State<HomeScreen> {
     return ClipRRect(
       borderRadius:
       BorderRadius.circular(26),
-
       child: BackdropFilter(
         filter: ImageFilter.blur(
           sigmaX: 16,
           sigmaY: 16,
         ),
-
         child: Container(
           width: double.infinity,
-
           padding:
           const EdgeInsets.fromLTRB(
             20,
@@ -621,33 +719,32 @@ class _HomeScreenState extends State<HomeScreen> {
             20,
             20,
           ),
-
           decoration: BoxDecoration(
-            color: isDarkMode
+            color:
+            isDarkMode
                 ? Colors.black.withValues(
               alpha: 0.22,
             )
                 : Colors.white.withValues(
               alpha: 0.16,
             ),
-
             borderRadius:
             BorderRadius.circular(26),
-
             border: Border.all(
-              color: Colors.white.withValues(
-                alpha: isDarkMode
+              color:
+              Colors.white.withValues(
+                alpha:
+                isDarkMode
                     ? 0.18
                     : 0.25,
               ),
               width: 1,
             ),
           ),
-
-          child: isLoadingUpcoming
+          child:
+          isLoadingUpcoming
               ? const SizedBox(
             height: 135,
-
             child: Center(
               child:
               CircularProgressIndicator(
@@ -655,33 +752,28 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           )
-
-              : upcomingEvent == null
+              : upcomingEvents.isEmpty
               ? _buildNoUpcomingEvent()
-              : _buildUpcomingEventContent(),
+              : _buildUpcomingEventCarousel(),
         ),
       ),
     );
   }
 
-  // ============================================================
-  // UPCOMING EVENT CONTENT
-  // ============================================================
+  // ==========================================================
+  // UPCOMING EVENT CAROUSEL
+  // ==========================================================
 
-  Widget _buildUpcomingEventContent() {
-    final UpcomingEvent event =
-    upcomingEvent!;
-
+  Widget _buildUpcomingEventCarousel() {
     return Column(
       crossAxisAlignment:
       CrossAxisAlignment.start,
-
       children: [
         Text(
           'UPCOMING EVENT',
-
           style: TextStyle(
-            color: Colors.white.withValues(
+            color:
+            Colors.white.withValues(
               alpha: 0.68,
             ),
             fontSize: 11,
@@ -690,160 +782,277 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
 
-        const SizedBox(height: 14),
-
-        Row(
-          children: [
-            Container(
-              height: 46,
-              width: 46,
-
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(
-                  alpha: 0.16,
-                ),
-                borderRadius:
-                BorderRadius.circular(14),
-              ),
-
-              child: Icon(
-                event.icon,
-                color: Colors.white,
-                size: 24,
-              ),
-            ),
-
-            const SizedBox(width: 12),
-
-            Expanded(
-              child: Text(
-                event.title,
-
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 21,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-          ],
+        const SizedBox(
+          height: 14,
         ),
 
-        const SizedBox(height: 14),
+        SizedBox(
+          height: 215,
+          child: PageView.builder(
+            controller:
+            _upcomingPageController,
+            itemCount:
+            upcomingEvents.length,
+            onPageChanged:
+                (int index) {
+              if (!mounted) return;
 
-        // --------------------------------------------------------
-        // DATE
-        // --------------------------------------------------------
-
-        Row(
-          children: [
-            Container(
-              height: 31,
-              width: 31,
-
-              decoration: BoxDecoration(
-                color:
-                Colors.white.withValues(
-                  alpha: 0.16,
-                ),
-                borderRadius:
-                BorderRadius.circular(10),
-              ),
-
-              child: const Icon(
-                Icons.calendar_today_outlined,
-                color: Colors.white,
-                size: 16,
-              ),
-            ),
-
-            const SizedBox(width: 10),
-
-            Expanded(
-              child: Text(
-                _formatDate(event.date),
-
-                style: TextStyle(
-                  color:
-                  Colors.white.withValues(
-                    alpha: 0.88,
-                  ),
-                  fontSize: 14,
-                  fontWeight:
-                  FontWeight.w500,
-                ),
-              ),
-            ),
-          ],
+              setState(() {
+                _currentUpcomingPage =
+                    index;
+              });
+            },
+            itemBuilder:
+                (
+                BuildContext context,
+                int index,
+                ) {
+              return _buildUpcomingEventTile(
+                upcomingEvents[index],
+              );
+            },
+          ),
         ),
+      ],
+    );
+  }
 
-        // --------------------------------------------------------
-        // TIME
-        // --------------------------------------------------------
+  // ==========================================================
+  // UPCOMING EVENT TILE
+  // ==========================================================
 
-        if (!event.isBirthday &&
-            _hasTime(event.date)) ...[
-          const SizedBox(height: 9),
-
+  Widget _buildUpcomingEventTile(
+      UpcomingEvent event,
+      ) {
+    return Padding(
+      padding:
+      const EdgeInsets.only(
+        right: 4,
+      ),
+      child: Column(
+        crossAxisAlignment:
+        CrossAxisAlignment.start,
+        children: [
           Row(
+            crossAxisAlignment:
+            CrossAxisAlignment.start,
             children: [
               Container(
-                height: 31,
-                width: 31,
-
-                decoration: BoxDecoration(
+                height: 46,
+                width: 46,
+                decoration:
+                BoxDecoration(
                   color:
                   Colors.white.withValues(
                     alpha: 0.16,
                   ),
                   borderRadius:
-                  BorderRadius.circular(10),
+                  BorderRadius.circular(
+                    14,
+                  ),
                 ),
-
-                child: const Icon(
-                  Icons.access_time_outlined,
+                child: Icon(
+                  event.icon,
                   color: Colors.white,
-                  size: 17,
+                  size: 24,
                 ),
               ),
 
-              const SizedBox(width: 10),
+              const SizedBox(
+                width: 12,
+              ),
 
-              Text(
-                _formatTime(event.date),
-
-                style: TextStyle(
-                  color:
-                  Colors.white.withValues(
-                    alpha: 0.88,
+              Expanded(
+                child: Text(
+                  event.title,
+                  maxLines: 2,
+                  overflow:
+                  TextOverflow.ellipsis,
+                  softWrap: true,
+                  style:
+                  const TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    height: 1.2,
+                    fontWeight:
+                    FontWeight.w700,
                   ),
-                  fontSize: 14,
-                  fontWeight:
-                  FontWeight.w500,
                 ),
               ),
             ],
           ),
+
+          const SizedBox(
+            height: 14,
+          ),
+
+          Row(
+            crossAxisAlignment:
+            CrossAxisAlignment.start,
+            children: [
+              Container(
+                height: 31,
+                width: 31,
+                decoration:
+                BoxDecoration(
+                  color:
+                  Colors.white.withValues(
+                    alpha: 0.16,
+                  ),
+                  borderRadius:
+                  BorderRadius.circular(
+                    10,
+                  ),
+                ),
+                child:
+                const Icon(
+                  Icons
+                      .calendar_today_outlined,
+                  color: Colors.white,
+                  size: 16,
+                ),
+              ),
+
+              const SizedBox(
+                width: 10,
+              ),
+
+              Expanded(
+                child: Text(
+                  _formatDate(
+                    event.date,
+                  ),
+                  maxLines: 2,
+                  overflow:
+                  TextOverflow.ellipsis,
+                  softWrap: true,
+                  style: TextStyle(
+                    color:
+                    Colors.white
+                        .withValues(
+                      alpha: 0.88,
+                    ),
+                    fontSize: 14,
+                    height: 1.3,
+                    fontWeight:
+                    FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          if (!event.isBirthday &&
+              _hasTime(event.date)) ...[
+            const SizedBox(
+              height: 9,
+            ),
+
+            Row(
+              children: [
+                Container(
+                  height: 31,
+                  width: 31,
+                  decoration:
+                  BoxDecoration(
+                    color:
+                    Colors.white
+                        .withValues(
+                      alpha: 0.16,
+                    ),
+                    borderRadius:
+                    BorderRadius.circular(
+                      10,
+                    ),
+                  ),
+                  child:
+                  const Icon(
+                    Icons
+                        .access_time_outlined,
+                    color: Colors.white,
+                    size: 17,
+                  ),
+                ),
+
+                const SizedBox(
+                  width: 10,
+                ),
+
+                Expanded(
+                  child: Text(
+                    _formatTime(
+                      event.date,
+                    ),
+                    maxLines: 1,
+                    overflow:
+                    TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color:
+                      Colors.white
+                          .withValues(
+                        alpha: 0.88,
+                      ),
+                      fontSize: 14,
+                      fontWeight:
+                      FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
         ],
-      ],
+      ),
     );
   }
 
-  // ============================================================
+  // ==========================================================
+  // ANIME GIF
+  // ==========================================================
+
+  Widget _buildAnimeGif() {
+    return ClipRRect(
+      borderRadius:
+      BorderRadius.circular(26),
+      child: Container(
+        width: double.infinity,
+        height: 180,
+        decoration: BoxDecoration(
+          borderRadius:
+          BorderRadius.circular(26),
+          border: Border.all(
+            color:
+            Colors.white.withValues(
+              alpha: 0.20,
+            ),
+            width: 1,
+          ),
+        ),
+        child: Image.asset(
+          'images/persona_anime_butterflies.png',
+          width: double.infinity,
+          height: 180,
+          fit: BoxFit.cover,
+          gaplessPlayback: true,
+        ),
+      ),
+    );
+  }
+
+  // ==========================================================
   // NO UPCOMING EVENT
-  // ============================================================
+  // ==========================================================
 
   Widget _buildNoUpcomingEvent() {
     return Column(
       crossAxisAlignment:
       CrossAxisAlignment.start,
-
       children: [
         Text(
           'UPCOMING EVENT',
-
           style: TextStyle(
-            color: Colors.white.withValues(
+            color:
+            Colors.white.withValues(
               alpha: 0.68,
             ),
             fontSize: 11,
@@ -852,22 +1061,26 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
 
-        const SizedBox(height: 16),
+        const SizedBox(
+          height: 16,
+        ),
 
         const Row(
           children: [
             Icon(
-              Icons.event_available_outlined,
+              Icons
+                  .event_available_outlined,
               color: Colors.white,
               size: 30,
             ),
 
-            SizedBox(width: 12),
+            SizedBox(
+              width: 12,
+            ),
 
             Expanded(
               child: Text(
                 'Nothing coming up',
-
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 21,
@@ -879,14 +1092,16 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
 
-        const SizedBox(height: 8),
+        const SizedBox(
+          height: 8,
+        ),
 
         Text(
-          'Your upcoming birthdays and calendar events '
-              'will appear here.',
-
+          'Your upcoming birthdays and calendar '
+              'events will appear here.',
           style: TextStyle(
-            color: Colors.white.withValues(
+            color:
+            Colors.white.withValues(
               alpha: 0.75,
             ),
             fontSize: 14,
@@ -897,11 +1112,13 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ============================================================
-  // DATE FORMATTING
-  // ============================================================
+  // ==========================================================
+  // DATE FORMAT
+  // ==========================================================
 
-  String _formatDate(DateTime date) {
+  String _formatDate(
+      DateTime date,
+      ) {
     const List<String> weekdays = [
       'Monday',
       'Tuesday',
@@ -932,71 +1149,99 @@ class _HomeScreenState extends State<HomeScreen> {
         '${date.year}';
   }
 
-  String _formatTime(DateTime date) {
-    final int hour = date.hour == 0
+  // ==========================================================
+  // TIME FORMAT
+  // ==========================================================
+
+  String _formatTime(
+      DateTime date,
+      ) {
+    final int hour =
+    date.hour == 0
         ? 12
         : date.hour > 12
         ? date.hour - 12
         : date.hour;
 
     final String minute =
-    date.minute.toString().padLeft(2, '0');
+    date.minute
+        .toString()
+        .padLeft(2, '0');
 
     final String period =
-    date.hour >= 12 ? 'PM' : 'AM';
+    date.hour >= 12
+        ? 'PM'
+        : 'AM';
 
     return '$hour:$minute $period';
   }
 
-  bool _hasTime(DateTime date) {
+  // ==========================================================
+  // HAS TIME
+  // ==========================================================
+
+  bool _hasTime(
+      DateTime date,
+      ) {
     return date.hour != 0 ||
         date.minute != 0 ||
         date.second != 0;
   }
 
-  // ============================================================
+  // ==========================================================
   // EVENT INDICATORS
-  // ============================================================
+  // ==========================================================
 
   Widget _buildEventIndicators() {
+    if (upcomingEvents.length <= 1) {
+      return const SizedBox(
+        height: 7,
+      );
+    }
+
     return SizedBox(
       width: double.infinity,
-
       child: Row(
         mainAxisAlignment:
         MainAxisAlignment.center,
-
-        children: [
-          _buildIndicator(active: true),
-          const SizedBox(width: 7),
-          _buildIndicator(active: false),
-          const SizedBox(width: 7),
-          _buildIndicator(active: false),
-          const SizedBox(width: 7),
-          _buildIndicator(active: false),
-        ],
+        children: List.generate(
+          upcomingEvents.length,
+              (int index) {
+            return Padding(
+              padding:
+              const EdgeInsets.symmetric(
+                horizontal: 3.5,
+              ),
+              child: _buildIndicator(
+                active:
+                index ==
+                    _currentUpcomingPage,
+              ),
+            );
+          },
+        ),
       ),
     );
   }
 
-  // ============================================================
+  // ==========================================================
   // INDICATOR
-  // ============================================================
+  // ==========================================================
 
   Widget _buildIndicator({
     required bool active,
   }) {
     return AnimatedContainer(
       duration:
-      const Duration(milliseconds: 250),
-
+      const Duration(
+        milliseconds: 250,
+      ),
       height: 7,
       width: 7,
-
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-
-        color: active
+        color:
+        active
             ? Colors.white
             : Colors.white.withValues(
           alpha: 0.35,
@@ -1005,9 +1250,9 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ============================================================
+  // ==========================================================
   // SECTION TITLE
-  // ============================================================
+  // ==========================================================
 
   Widget _buildSectionTitle({
     required String title,
@@ -1016,25 +1261,26 @@ class _HomeScreenState extends State<HomeScreen> {
     return Column(
       crossAxisAlignment:
       CrossAxisAlignment.start,
-
       children: [
         Text(
           title,
-
           style: const TextStyle(
             color: Colors.white,
             fontSize: 22,
-            fontWeight: FontWeight.w700,
+            fontWeight:
+            FontWeight.w700,
           ),
         ),
 
-        const SizedBox(height: 4),
+        const SizedBox(
+          height: 4,
+        ),
 
         Text(
           subtitle,
-
           style: TextStyle(
-            color: Colors.white.withValues(
+            color:
+            Colors.white.withValues(
               alpha: 0.70,
             ),
             fontSize: 14,
@@ -1044,9 +1290,9 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ============================================================
+  // ==========================================================
   // FEATURE CARD
-  // ============================================================
+  // ==========================================================
 
   Widget _buildFeatureCard(
       BuildContext context, {
@@ -1061,17 +1307,19 @@ class _HomeScreenState extends State<HomeScreen> {
     return ClipRRect(
       borderRadius:
       BorderRadius.circular(25),
-
       child: BackdropFilter(
         filter: ImageFilter.blur(
           sigmaX: 14,
           sigmaY: 14,
         ),
-
         child: Material(
-          color: isEmergency
-              ? const Color(0xFF8F3535)
-              .withValues(alpha: 0.35)
+          color:
+          isEmergency
+              ? const Color(
+            0xFF8F3535,
+          ).withValues(
+            alpha: 0.35,
+          )
               : isDarkMode
               ? Colors.black.withValues(
             alpha: 0.20,
@@ -1079,44 +1327,37 @@ class _HomeScreenState extends State<HomeScreen> {
               : Colors.white.withValues(
             alpha: 0.15,
           ),
-
           child: InkWell(
             onTap: onTap,
-
             borderRadius:
             BorderRadius.circular(25),
-
             child: Container(
               padding:
               const EdgeInsets.all(17),
-
-              decoration: BoxDecoration(
+              decoration:
+              BoxDecoration(
                 borderRadius:
                 BorderRadius.circular(25),
-
                 border: Border.all(
                   color:
                   Colors.white.withValues(
-                    alpha: isDarkMode
+                    alpha:
+                    isDarkMode
                         ? 0.18
                         : 0.22,
                   ),
                   width: 1,
                 ),
               ),
-
               child: Row(
                 children: [
-                  // ------------------------------------------
-                  // ICON
-                  // ------------------------------------------
-
                   Container(
                     height: 58,
                     width: 58,
-
-                    decoration: BoxDecoration(
-                      color: isEmergency
+                    decoration:
+                    BoxDecoration(
+                      color:
+                      isEmergency
                           ? const Color(
                         0xFFB94A48,
                       ).withValues(
@@ -1126,55 +1367,52 @@ class _HomeScreenState extends State<HomeScreen> {
                           .withValues(
                         alpha: 0.90,
                       ),
-
                       borderRadius:
                       BorderRadius.circular(
                         18,
                       ),
                     ),
-
                     child: Icon(
                       icon,
-
-                      color: isEmergency
+                      color:
+                      isEmergency
                           ? Colors.white
                           : iconColor,
-
                       size: 29,
                     ),
                   ),
 
-                  const SizedBox(width: 16),
-
-                  // ------------------------------------------
-                  // TEXT
-                  // ------------------------------------------
+                  const SizedBox(
+                    width: 16,
+                  ),
 
                   Expanded(
                     child: Column(
                       crossAxisAlignment:
-                      CrossAxisAlignment.start,
-
+                      CrossAxisAlignment
+                          .start,
                       children: [
                         Text(
                           title,
-
                           style:
                           const TextStyle(
-                            color: Colors.white,
+                            color:
+                            Colors.white,
                             fontSize: 18,
                             fontWeight:
                             FontWeight.w700,
                           ),
                         ),
 
-                        const SizedBox(height: 5),
+                        const SizedBox(
+                          height: 5,
+                        ),
 
                         Text(
                           subtitle,
-
                           style: TextStyle(
-                            color: Colors.white
+                            color:
+                            Colors.white
                                 .withValues(
                               alpha: 0.70,
                             ),
@@ -1186,28 +1424,29 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
 
-                  const SizedBox(width: 10),
-
-                  // ------------------------------------------
-                  // ARROW
-                  // ------------------------------------------
+                  const SizedBox(
+                    width: 10,
+                  ),
 
                   Container(
                     height: 36,
                     width: 36,
-
-                    decoration: BoxDecoration(
+                    decoration:
+                    BoxDecoration(
                       color:
-                      Colors.white.withValues(
+                      Colors.white
+                          .withValues(
                         alpha: 0.12,
                       ),
-                      shape: BoxShape.circle,
+                      shape:
+                      BoxShape.circle,
                     ),
-
-                    child: const Icon(
+                    child:
+                    const Icon(
                       Icons
                           .arrow_forward_ios_rounded,
-                      color: Colors.white,
+                      color:
+                      Colors.white,
                       size: 15,
                     ),
                   ),
@@ -1220,9 +1459,9 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ============================================================
+  // ==========================================================
   // GLASS SETTINGS BUTTON
-  // ============================================================
+  // ==========================================================
 
   Widget _buildGlassIconButton({
     required IconData icon,
@@ -1234,31 +1473,28 @@ class _HomeScreenState extends State<HomeScreen> {
           sigmaX: 10,
           sigmaY: 10,
         ),
-
         child: Material(
           color:
           Colors.white.withValues(
             alpha: 0.15,
           ),
-
           child: InkWell(
             onTap: onTap,
-
             child: Container(
               height: 44,
               width: 44,
-
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-
+              decoration:
+              BoxDecoration(
+                shape:
+                BoxShape.circle,
                 border: Border.all(
                   color:
-                  Colors.white.withValues(
+                  Colors.white
+                      .withValues(
                     alpha: 0.25,
                   ),
                 ),
               ),
-
               child: Icon(
                 icon,
                 color: Colors.white,
@@ -1271,9 +1507,9 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ============================================================
+  // ==========================================================
   // BOTTOM BRANDING
-  // ============================================================
+  // ==========================================================
 
   Widget _buildBottomBranding() {
     return Center(
@@ -1282,15 +1518,14 @@ class _HomeScreenState extends State<HomeScreen> {
           Container(
             height: 45,
             width: 45,
-
-            decoration: BoxDecoration(
+            decoration:
+            BoxDecoration(
               color:
               Colors.white.withValues(
                 alpha: 0.12,
               ),
-
-              shape: BoxShape.circle,
-
+              shape:
+              BoxShape.circle,
               border: Border.all(
                 color:
                 Colors.white.withValues(
@@ -1298,26 +1533,28 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
             ),
-
             child: const Icon(
               Icons.spa_outlined,
-              color: Colors.white70,
+              color:
+              Colors.white70,
               size: 23,
             ),
           ),
 
-          const SizedBox(height: 9),
+          const SizedBox(
+            height: 9,
+          ),
 
           Text(
             'PERSONA',
-
             style: TextStyle(
               color:
               Colors.white.withValues(
                 alpha: 0.55,
               ),
               fontSize: 11,
-              fontWeight: FontWeight.w700,
+              fontWeight:
+              FontWeight.w700,
               letterSpacing: 3,
             ),
           ),

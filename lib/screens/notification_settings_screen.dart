@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
 
+import '../database/database_helper.dart';
+import '../models/calendar_event.dart';
+import '../models/person.dart';
+import '../services/event_reminder_service.dart';
 import '../services/notification_settings_service.dart';
 import '../services/reminder_service.dart';
-import '../models/person.dart';
-import '../database/database_helper.dart';
 import '../services/theme_service.dart';
 
 class NotificationSettingsScreen extends StatefulWidget {
-  const NotificationSettingsScreen({super.key});
+  const NotificationSettingsScreen({
+    super.key,
+  });
 
   @override
   State<NotificationSettingsScreen> createState() =>
@@ -16,119 +20,194 @@ class NotificationSettingsScreen extends StatefulWidget {
 
 class _NotificationSettingsScreenState
     extends State<NotificationSettingsScreen> {
-  // ============================================================
-  // Persona Colors
-  // ============================================================
-
-  static const Color olive = Color(0xFF808000);
-  static const Color oliveDrab = Color(0xFF6B8E23);
-  static const Color darkOlive = Color(0xFF3F4A16);
-  static const Color lightCream = Color(0xFFF4F5E9);
-  static const Color darkBackground = Color(0xFF1E2412);
-  static const Color darkCard = Color(0xFF2B321B);
-
-  // ============================================================
-  // Notification Settings
-  // ============================================================
-
   bool notificationsEnabled = true;
   bool reminderSoundsEnabled = true;
-  bool birthdayRemindersEnabled = true;
 
+  bool birthdayRemindersEnabled = true;
   bool sevenDaysBeforeEnabled = true;
   bool oneDayBeforeEnabled = true;
   bool onBirthdayEnabled = true;
 
+  bool eventRemindersEnabled = true;
+  int eventReminderMinutes = 15;
+
   bool isLoading = true;
 
   // ============================================================
-  // Initialize
+  // LOAD SETTINGS
   // ============================================================
 
   @override
   void initState() {
     super.initState();
+
     _loadSettings();
   }
 
-  // ============================================================
-  // Load Settings
-  // ============================================================
-
   Future<void> _loadSettings() async {
     final bool notifications =
-    await NotificationSettingsService.getNotificationsEnabled();
+    await NotificationSettingsService
+        .getNotificationsEnabled();
 
     final bool sounds =
-    await NotificationSettingsService.getReminderSoundsEnabled();
+    await NotificationSettingsService
+        .getReminderSoundsEnabled();
 
     final bool birthdayReminders =
-    await NotificationSettingsService.getBirthdayRemindersEnabled();
+    await NotificationSettingsService
+        .getBirthdayRemindersEnabled();
 
     final bool sevenDays =
-    await NotificationSettingsService.getSevenDaysBeforeEnabled();
+    await NotificationSettingsService
+        .getSevenDaysBeforeEnabled();
 
     final bool oneDay =
-    await NotificationSettingsService.getOneDayBeforeEnabled();
+    await NotificationSettingsService
+        .getOneDayBeforeEnabled();
 
-    final bool birthday =
-    await NotificationSettingsService.getOnBirthdayEnabled();
+    final bool onBirthday =
+    await NotificationSettingsService
+        .getOnBirthdayEnabled();
 
-    if (!mounted) return;
+    final bool eventReminders =
+    await NotificationSettingsService
+        .getEventRemindersEnabled();
+
+    final int eventMinutes =
+    await NotificationSettingsService
+        .getEventReminderMinutes();
+
+    if (!mounted) {
+      return;
+    }
 
     setState(() {
       notificationsEnabled = notifications;
       reminderSoundsEnabled = sounds;
-      birthdayRemindersEnabled = birthday;
 
-      sevenDaysBeforeEnabled = sevenDays;
-      oneDayBeforeEnabled = oneDay;
-      onBirthdayEnabled = birthday;
+      birthdayRemindersEnabled =
+          birthdayReminders;
+
+      sevenDaysBeforeEnabled =
+          sevenDays;
+
+      oneDayBeforeEnabled =
+          oneDay;
+
+      onBirthdayEnabled =
+          onBirthday;
+
+      eventRemindersEnabled =
+          eventReminders;
+
+      eventReminderMinutes =
+          eventMinutes;
 
       isLoading = false;
     });
   }
 
   // ============================================================
-  // Update Notifications
+  // REFRESH BIRTHDAY REMINDERS
   // ============================================================
 
-  Future<void> _updateNotifications(bool value) async {
-    await NotificationSettingsService.setNotificationsEnabled(value);
+  Future<void> _refreshBirthdayReminders() async {
+    final List<Person> people =
+    await DatabaseHelper()
+        .getPeople();
 
-    if (!mounted) return;
+    for (final Person person in people) {
+      await ReminderService
+          .scheduleBirthdayReminders(
+        person,
+      );
+    }
+  }
+
+  // ============================================================
+  // REFRESH EVENT REMINDERS
+  // ============================================================
+
+  Future<void> _refreshEventReminders() async {
+    final List<CalendarEvent> events =
+    await DatabaseHelper()
+        .getCalendarEvents();
+
+    for (final CalendarEvent event
+    in events) {
+      await EventReminderService
+          .refreshEventReminder(
+        event,
+      );
+    }
+  }
+
+  // ============================================================
+  // NOTIFICATIONS
+  // ============================================================
+
+  Future<void> _updateNotifications(
+      bool value,
+      ) async {
+    await NotificationSettingsService
+        .setNotificationsEnabled(
+      value,
+    );
+
+    if (!mounted) {
+      return;
+    }
 
     setState(() {
       notificationsEnabled = value;
     });
 
     await _refreshBirthdayReminders();
+    await _refreshEventReminders();
   }
 
   // ============================================================
-  // Update Reminder Sounds
+  // REMINDER SOUNDS
   // ============================================================
 
-  Future<void> _updateReminderSounds(bool value) async {
-    await NotificationSettingsService.setReminderSoundsEnabled(value);
+  Future<void> _updateReminderSounds(
+      bool value,
+      ) async {
+    await NotificationSettingsService
+        .setReminderSoundsEnabled(
+      value,
+    );
 
-    if (!mounted) return;
+    if (!mounted) {
+      return;
+    }
 
     setState(() {
       reminderSoundsEnabled = value;
     });
 
-    await _refreshBirthdayReminders();
+    // Sound preference is saved immediately.
+    //
+    // We do not refresh reminders here because
+    // this setting does not change whether a
+    // reminder exists.
   }
 
   // ============================================================
-  // Update Birthday Reminders
+  // BIRTHDAY REMINDERS
   // ============================================================
 
-  Future<void> _updateBirthdayReminders(bool value) async {
-    await NotificationSettingsService.setBirthdayRemindersEnabled(value);
+  Future<void> _updateBirthdayReminders(
+      bool value,
+      ) async {
+    await NotificationSettingsService
+        .setBirthdayRemindersEnabled(
+      value,
+    );
 
-    if (!mounted) return;
+    if (!mounted) {
+      return;
+    }
 
     setState(() {
       birthdayRemindersEnabled = value;
@@ -138,13 +217,20 @@ class _NotificationSettingsScreenState
   }
 
   // ============================================================
-  // Update 7 Days Before
+  // SEVEN DAYS BEFORE
   // ============================================================
 
-  Future<void> _updateSevenDays(bool value) async {
-    await NotificationSettingsService.setSevenDaysBeforeEnabled(value);
+  Future<void> _updateSevenDaysBefore(
+      bool value,
+      ) async {
+    await NotificationSettingsService
+        .setSevenDaysBeforeEnabled(
+      value,
+    );
 
-    if (!mounted) return;
+    if (!mounted) {
+      return;
+    }
 
     setState(() {
       sevenDaysBeforeEnabled = value;
@@ -154,13 +240,20 @@ class _NotificationSettingsScreenState
   }
 
   // ============================================================
-  // Update 1 Day Before
+  // ONE DAY BEFORE
   // ============================================================
 
-  Future<void> _updateOneDay(bool value) async {
-    await NotificationSettingsService.setOneDayBeforeEnabled(value);
+  Future<void> _updateOneDayBefore(
+      bool value,
+      ) async {
+    await NotificationSettingsService
+        .setOneDayBeforeEnabled(
+      value,
+    );
 
-    if (!mounted) return;
+    if (!mounted) {
+      return;
+    }
 
     setState(() {
       oneDayBeforeEnabled = value;
@@ -170,13 +263,20 @@ class _NotificationSettingsScreenState
   }
 
   // ============================================================
-  // Update On Birthday
+  // ON BIRTHDAY
   // ============================================================
 
-  Future<void> _updateOnBirthday(bool value) async {
-    await NotificationSettingsService.setOnBirthdayEnabled(value);
+  Future<void> _updateOnBirthday(
+      bool value,
+      ) async {
+    await NotificationSettingsService
+        .setOnBirthdayEnabled(
+      value,
+    );
 
-    if (!mounted) return;
+    if (!mounted) {
+      return;
+    }
 
     setState(() {
       onBirthdayEnabled = value;
@@ -186,308 +286,538 @@ class _NotificationSettingsScreenState
   }
 
   // ============================================================
-  // Refresh Birthday Reminders
+  // EVENT REMINDERS
   // ============================================================
 
-  Future<void> _refreshBirthdayReminders() async {
-    try {
-      final List<Person> people =
-      await DatabaseHelper().getPeople();
+  Future<void> _updateEventReminders(
+      bool value,
+      ) async {
+    await NotificationSettingsService
+        .setEventRemindersEnabled(
+      value,
+    );
 
-      for (final Person person in people) {
-        await ReminderService.scheduleBirthdayReminders(person);
-      }
-    } catch (e) {
-      debugPrint(
-        'Could not refresh birthday reminders: $e',
-      );
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      eventRemindersEnabled = value;
+    });
+
+    await _refreshEventReminders();
+  }
+
+  // ============================================================
+  // EVENT REMINDER TIMING
+  // ============================================================
+
+  Future<void> _updateEventReminderMinutes(
+      int minutes,
+      ) async {
+    await NotificationSettingsService
+        .setEventReminderMinutes(
+      minutes,
+    );
+
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      eventReminderMinutes = minutes;
+    });
+
+    await _refreshEventReminders();
+  }
+
+  // ============================================================
+  // REMINDER LABEL
+  // ============================================================
+
+  String _eventReminderLabel(
+      int minutes,
+      ) {
+    switch (minutes) {
+      case 0:
+        return 'At event time';
+
+      case 15:
+        return '15 minutes before';
+
+      case 30:
+        return '30 minutes before';
+
+      case 60:
+        return '1 hour before';
+
+      default:
+        return '$minutes minutes before';
     }
   }
 
   // ============================================================
-  // Build
+  // BUILD SWITCH TILE
   // ============================================================
 
-  @override
-  Widget build(BuildContext context) {
-    // Get the shared Persona theme.
+  Widget _buildSwitchTile({
+    required BuildContext context,
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required bool value,
+    required ValueChanged<bool> onChanged,
+  }) {
     final ThemeService themeService =
     ThemeProvider.of(context);
 
-    final bool isDarkMode = themeService.isDarkMode;
+    final bool isDark =
+        themeService.isDarkMode;
 
-    return Scaffold(
-      backgroundColor:
-      isDarkMode ? darkBackground : lightCream,
-
-      // ========================================================
-      // App Bar
-      // ========================================================
-
-      appBar: AppBar(
-        title: const Text(
-          'Notifications & Reminders',
-        ),
-
-        backgroundColor:
-        isDarkMode ? darkCard : oliveDrab,
-
-        foregroundColor: Colors.white,
-
-        elevation: 0,
+    return ListTile(
+      contentPadding:
+      const EdgeInsets.symmetric(
+        horizontal: 4,
       ),
-
-      // ========================================================
-      // Body
-      // ========================================================
-
-      body: isLoading
-          ? Center(
-        child: CircularProgressIndicator(
-          color: isDarkMode
-              ? oliveDrab
-              : oliveDrab,
+      leading: Icon(
+        icon,
+        color: isDark
+            ? Colors.white
+            : const Color(0xFF3F4A16),
+      ),
+      title: Text(
+        title,
+        style: TextStyle(
+          color: isDark
+              ? Colors.white
+              : const Color(0xFF3F4A16),
+          fontWeight: FontWeight.w600,
         ),
-      )
-          : ListView(
-        padding: const EdgeInsets.all(16),
+      ),
+      subtitle: Text(
+        subtitle,
+        style: TextStyle(
+          color: isDark
+              ? Colors.white70
+              : Colors.black54,
+        ),
+      ),
+      trailing: Switch(
+        value: value,
+        onChanged: onChanged,
+        activeColor:
+        const Color(0xFF6B8E23),
+      ),
+    );
+  }
+
+  // ============================================================
+  // SECTION CARD
+  // ============================================================
+
+  Widget _buildSectionCard({
+    required BuildContext context,
+    required String title,
+    required Widget child,
+  }) {
+    final ThemeService themeService =
+    ThemeProvider.of(context);
+
+    final bool isDark =
+        themeService.isDarkMode;
+
+    return Container(
+      margin:
+      const EdgeInsets.only(
+        bottom: 20,
+      ),
+      padding:
+      const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDark
+            ? const Color(0xFF2B321B)
+            .withValues(alpha: 0.92)
+            : Colors.white
+            .withValues(alpha: 0.90),
+        borderRadius:
+        BorderRadius.circular(22),
+        border: Border.all(
+          color: Colors.white.withValues(
+            alpha: isDark
+                ? 0.10
+                : 0.30,
+          ),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment:
+        CrossAxisAlignment.start,
         children: [
-          // ==================================================
-          // NOTIFICATIONS
-          // ==================================================
-
-          _buildSectionTitle(
-            'Notifications',
-            isDarkMode,
+          Text(
+            title,
+            style: TextStyle(
+              color: isDark
+                  ? Colors.white
+                  : const Color(
+                0xFF3F4A16,
+              ),
+              fontSize: 18,
+              fontWeight:
+              FontWeight.bold,
+            ),
           ),
-
-          _buildSettingTile(
-            icon: Icons.notifications_outlined,
-            title: 'Enable Persona Notifications',
-            subtitle:
-            'Allow Persona to send notifications',
-            value: notificationsEnabled,
-            onChanged: _updateNotifications,
-            isDarkMode: isDarkMode,
+          const SizedBox(
+            height: 8,
           ),
-
-          const SizedBox(height: 20),
-
-          // ==================================================
-          // REMINDER SOUNDS
-          // ==================================================
-
-          _buildSectionTitle(
-            'Reminder Sounds',
-            isDarkMode,
-          ),
-
-          _buildSettingTile(
-            icon: Icons.volume_up_outlined,
-            title: 'Reminder Sounds',
-            subtitle:
-            'Play a sound when a reminder appears',
-            value: reminderSoundsEnabled,
-            onChanged: _updateReminderSounds,
-            enabled: notificationsEnabled,
-            isDarkMode: isDarkMode,
-          ),
-
-          const SizedBox(height: 20),
-
-          // ==================================================
-          // BIRTHDAY REMINDERS
-          // ==================================================
-
-          _buildSectionTitle(
-            'Birthday Reminders',
-            isDarkMode,
-          ),
-
-          _buildSettingTile(
-            icon: Icons.cake_outlined,
-            title: 'Birthday Reminders',
-            subtitle:
-            'Receive reminders about upcoming birthdays',
-            value: birthdayRemindersEnabled,
-            onChanged: _updateBirthdayReminders,
-            enabled: notificationsEnabled,
-            isDarkMode: isDarkMode,
-          ),
-
-          const SizedBox(height: 12),
-
-          // ==================================================
-          // 7 DAYS BEFORE
-          // ==================================================
-
-          _buildSettingTile(
-            icon: Icons.calendar_today_outlined,
-            title: '7 days before',
-            subtitle:
-            'Remind me one week before the birthday',
-            value: sevenDaysBeforeEnabled,
-            onChanged: _updateSevenDays,
-            enabled:
-            notificationsEnabled &&
-                birthdayRemindersEnabled,
-            isDarkMode: isDarkMode,
-          ),
-
-          // ==================================================
-          // 1 DAY BEFORE
-          // ==================================================
-
-          _buildSettingTile(
-            icon: Icons.event_outlined,
-            title: '1 day before',
-            subtitle:
-            'Remind me the day before the birthday',
-            value: oneDayBeforeEnabled,
-            onChanged: _updateOneDay,
-            enabled:
-            notificationsEnabled &&
-                birthdayRemindersEnabled,
-            isDarkMode: isDarkMode,
-          ),
-
-          // ==================================================
-          // ON BIRTHDAY
-          // ==================================================
-
-          _buildSettingTile(
-            icon: Icons.cake_outlined,
-            title: 'On birthday',
-            subtitle:
-            'Remind me on the birthday',
-            value: onBirthdayEnabled,
-            onChanged: _updateOnBirthday,
-            enabled:
-            notificationsEnabled &&
-                birthdayRemindersEnabled,
-            isDarkMode: isDarkMode,
-          ),
-
-          const SizedBox(height: 20),
+          child,
         ],
       ),
     );
   }
 
   // ============================================================
-  // Section Title
+  // EVENT REMINDER TIMING SELECTOR
   // ============================================================
 
-  Widget _buildSectionTitle(
-      String title,
-      bool isDarkMode,
+  Widget _buildEventReminderTiming(
+      BuildContext context,
       ) {
-    return Padding(
-      padding: const EdgeInsets.only(
-        left: 4,
-        bottom: 8,
-      ),
-      child: Text(
-        title,
-        style: TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.bold,
-          color: isDarkMode
-              ? Colors.white
-              : darkOlive,
-        ),
-      ),
+    final ThemeService themeService =
+    ThemeProvider.of(context);
+
+    final bool isDark =
+        themeService.isDarkMode;
+
+    const List<int> reminderOptions = [
+      0,
+      15,
+      30,
+      60,
+    ];
+
+    return Column(
+      children: reminderOptions.map(
+            (int minutes) {
+          return RadioListTile<int>(
+            contentPadding:
+            EdgeInsets.zero,
+            value: minutes,
+            groupValue:
+            eventReminderMinutes,
+            activeColor:
+            const Color(0xFF6B8E23),
+            title: Text(
+              _eventReminderLabel(
+                minutes,
+              ),
+              style: TextStyle(
+                color: isDark
+                    ? Colors.white
+                    : const Color(
+                  0xFF3F4A16,
+                ),
+              ),
+            ),
+            onChanged:
+            eventRemindersEnabled
+                ? (int? value) {
+              if (value != null) {
+                _updateEventReminderMinutes(
+                  value,
+                );
+              }
+            }
+                : null,
+          );
+        },
+      ).toList(),
     );
   }
 
   // ============================================================
-  // Setting Tile
+  // BUILD
   // ============================================================
 
-  Widget _buildSettingTile({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required bool value,
-    required ValueChanged<bool> onChanged,
-    required bool isDarkMode,
-    bool enabled = true,
-  }) {
-    return Card(
-      elevation: isDarkMode ? 0 : 1,
+  @override
+  Widget build(BuildContext context) {
+    final ThemeService themeService =
+    ThemeProvider.of(context);
 
-      color: isDarkMode
-          ? darkCard
-          : Colors.white,
+    final bool isDark =
+        themeService.isDarkMode;
 
-      margin: const EdgeInsets.only(
-        bottom: 8,
-      ),
-
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(
-          color: isDarkMode
-              ? Colors.white.withValues(alpha: 0.08)
-              : Colors.transparent,
-        ),
-      ),
-
-      child: SwitchListTile(
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 6,
-        ),
-
-        secondary: Icon(
-          icon,
-          color: enabled
-              ? oliveDrab
-              : Colors.grey,
-        ),
-
-        title: Text(
-          title,
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
-            color: enabled
-                ? isDarkMode
-                ? Colors.white
-                : darkOlive
-                : Colors.grey,
+    if (isLoading) {
+      return Scaffold(
+        backgroundColor: isDark
+            ? const Color(0xFF1E2412)
+            : const Color(0xFF6B8E23),
+        appBar: AppBar(
+          backgroundColor:
+          Colors.transparent,
+          elevation: 0,
+          title: const Text(
+            'Notifications',
+            style: TextStyle(
+              color: Colors.white,
+              fontWeight:
+              FontWeight.bold,
+            ),
           ),
         ),
-
-        subtitle: Text(
-          subtitle,
-          style: TextStyle(
-            color: enabled
-                ? isDarkMode
-                ? Colors.white70
-                : Colors.grey[700]
-                : Colors.grey,
+        body: const Center(
+          child:
+          CircularProgressIndicator(
+            color: Colors.white,
           ),
         ),
+      );
+    }
 
-        value: value,
+    return Scaffold(
+      backgroundColor: isDark
+          ? const Color(0xFF1E2412)
+          : const Color(0xFF6B8E23),
+      appBar: AppBar(
+        backgroundColor:
+        Colors.transparent,
+        elevation: 0,
+        title: const Text(
+          'Notifications',
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight:
+            FontWeight.bold,
+          ),
+        ),
+        iconTheme:
+        const IconThemeData(
+          color: Colors.white,
+        ),
+      ),
+      body: Container(
+        decoration:
+        BoxDecoration(
+          gradient:
+          LinearGradient(
+            begin:
+            Alignment.topLeft,
+            end:
+            Alignment.bottomRight,
+            colors: isDark
+                ? const [
+              Color(0xFF1E2412),
+              Color(0xFF2B321B),
+              Color(0xFF11150B),
+            ]
+                : const [
+              Color(0xFF6B8E23),
+              Color(0xFF808000),
+              Color(0xFF3F4A16),
+            ],
+          ),
+        ),
+        child: SafeArea(
+          top: false,
+          child: ListView(
+            padding:
+            const EdgeInsets.fromLTRB(
+              16,
+              16,
+              16,
+              40,
+            ),
+            children: [
+              // ==================================================
+              // GENERAL NOTIFICATIONS
+              // ==================================================
 
-        onChanged: enabled
-            ? onChanged
-            : null,
+              _buildSectionCard(
+                context: context,
+                title: 'Notifications',
+                child:
+                _buildSwitchTile(
+                  context: context,
+                  title:
+                  'Notifications',
+                  subtitle:
+                  notificationsEnabled
+                      ? 'Persona notifications are enabled.'
+                      : 'All Persona notifications are disabled.',
+                  icon: Icons
+                      .notifications_outlined,
+                  value:
+                  notificationsEnabled,
+                  onChanged:
+                  _updateNotifications,
+                ),
+              ),
 
-        activeThumbColor: Colors.white,
+              // ==================================================
+              // REMINDER SOUNDS
+              // ==================================================
 
-        activeTrackColor: oliveDrab,
+              _buildSectionCard(
+                context: context,
+                title: 'Reminder Sounds',
+                child:
+                _buildSwitchTile(
+                  context: context,
+                  title:
+                  'Reminder Sounds',
+                  subtitle:
+                  reminderSoundsEnabled
+                      ? 'Notification sounds are enabled.'
+                      : 'Notification sounds are disabled.',
+                  icon: Icons
+                      .volume_up_outlined,
+                  value:
+                  reminderSoundsEnabled,
+                  onChanged:
+                  _updateReminderSounds,
+                ),
+              ),
 
-        inactiveThumbColor:
-        isDarkMode
-            ? Colors.grey[300]
-            : Colors.white,
+              // ==================================================
+              // BIRTHDAY REMINDERS
+              // ==================================================
 
-        inactiveTrackColor:
-        isDarkMode
-            ? Colors.white.withValues(alpha: 0.20)
-            : Colors.grey[400],
+              _buildSectionCard(
+                context: context,
+                title:
+                'Birthday Reminders',
+                child: Column(
+                  children: [
+                    _buildSwitchTile(
+                      context: context,
+                      title:
+                      'Birthday Reminders',
+                      subtitle:
+                      birthdayRemindersEnabled
+                          ? 'Birthday reminders are enabled.'
+                          : 'Birthday reminders are disabled.',
+                      icon: Icons
+                          .cake_outlined,
+                      value:
+                      birthdayRemindersEnabled,
+                      onChanged:
+                      _updateBirthdayReminders,
+                    ),
+
+                    if (birthdayRemindersEnabled) ...[
+                      const Divider(),
+
+                      _buildSwitchTile(
+                        context: context,
+                        title:
+                        '7 Days Before',
+                        subtitle:
+                        'Remind me one week before a birthday.',
+                        icon: Icons
+                            .date_range_outlined,
+                        value:
+                        sevenDaysBeforeEnabled,
+                        onChanged:
+                        _updateSevenDaysBefore,
+                      ),
+
+                      _buildSwitchTile(
+                        context: context,
+                        title:
+                        '1 Day Before',
+                        subtitle:
+                        'Remind me the day before a birthday.',
+                        icon: Icons
+                            .event_outlined,
+                        value:
+                        oneDayBeforeEnabled,
+                        onChanged:
+                        _updateOneDayBefore,
+                      ),
+
+                      _buildSwitchTile(
+                        context: context,
+                        title:
+                        'On Birthday',
+                        subtitle:
+                        'Remind me on the birthday.',
+                        icon: Icons
+                            .celebration_outlined,
+                        value:
+                        onBirthdayEnabled,
+                        onChanged:
+                        _updateOnBirthday,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+
+              // ==================================================
+              // CALENDAR EVENT REMINDERS
+              // ==================================================
+
+              _buildSectionCard(
+                context: context,
+                title:
+                'Calendar Event Reminders',
+                child: Column(
+                  children: [
+                    _buildSwitchTile(
+                      context: context,
+                      title:
+                      'Event Reminders',
+                      subtitle:
+                      eventRemindersEnabled
+                          ? 'Reminders for calendar events are enabled.'
+                          : 'Calendar event reminders are disabled.',
+                      icon: Icons
+                          .event_available_outlined,
+                      value:
+                      eventRemindersEnabled,
+                      onChanged:
+                      _updateEventReminders,
+                    ),
+
+                    if (eventRemindersEnabled) ...[
+                      const Divider(),
+
+                      Align(
+                        alignment:
+                        Alignment.centerLeft,
+                        child: Padding(
+                          padding:
+                          const EdgeInsets
+                              .only(
+                            left: 12,
+                            top: 8,
+                            bottom: 4,
+                          ),
+                          child: Text(
+                            'Remind me',
+                            style:
+                            TextStyle(
+                              color: isDark
+                                  ? Colors.white
+                                  : const Color(
+                                0xFF3F4A16,
+                              ),
+                              fontWeight:
+                              FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      _buildEventReminderTiming(
+                        context,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
