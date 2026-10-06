@@ -27,6 +27,11 @@ jobs:
       - name: Show Flutter version
         run: flutter --version
 
+      - name: Create .env
+        run: |
+          echo "GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}" >> .env
+          echo "GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}" >> .env
+
       - name: Get dependencies
         run: flutter pub get
 
